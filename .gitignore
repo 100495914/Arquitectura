@@ -6,7 +6,6 @@ cmake-build-*/
 # Ignore CLion project settings
 .idea/
 *.iws
-.idea/
 
 # Ignore CMake build files
 CMakeFiles/
