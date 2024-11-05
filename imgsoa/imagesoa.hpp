@@ -2,7 +2,7 @@
 // Created by diego on 20/10/24.
 //
 
-#ifndef IMAGEAOS_HPP
-#define IMAGEAOS_HPP
+#ifndef IMAGESOA_HPP
+#define IMAGESOA_HPP
 
-#endif //IMAGEAOS_HPP
+#endif //IMAGESOA_HPP

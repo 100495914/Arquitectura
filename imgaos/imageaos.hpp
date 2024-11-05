@@ -2,8 +2,8 @@
 // Created by diego on 20/10/24.
 //
 // imagesoa.hpp
-#ifndef IMAGESOA_HPP
-#define IMAGESOA_HPP
+#ifndef IMAGEAOS_HPP
+#define IMAGEAOS_HPP
 
 #include <string>
 #include <vector>
@@ -33,4 +33,4 @@ std::vector<Pixel> loadImage(const std::string& filename, int width, int height,
 // Función para guardar un vector de píxeles en un archivo PPM
 void saveImage(const std::string& filename, const std::vector<Pixel>& pixels, int width, int height, int maxColorValue);
 
-#endif // IMAGESOA_HPP
+#endif // IMAGEAOS_HPP
