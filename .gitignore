@@ -1,0 +1,61 @@
+*.ppm
+
+# Ignore build directories
+cmake-build-*/
+
+# Ignore CLion project settings
+.idea/
+*.iws
+.idea/
+
+# Ignore CMake build files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Ignore compiled object files, libraries, executables, etc.
+*.o
+*.a
+*.so
+*.exe
+*.out
+*.dll
+*.dylib
+
+# Ignore log files
+*.log
+
+# Ignore CLion-specific file types
+*.iml
+
+# Ignore generated files and artifacts
+*.obj
+*.pch
+*.pdb
+*.mod
+*.map
+*.suo
+*.tlog
+*.dep
+*.idb
+*.ipch
+
+# Ignore cache files
+*.swp
+*.DS_Store
+*.stackdump
+
+# Ignore backup files
+*.bak
+*.tmp
+*.old
+
+# Ignore coverage, profiling, and debugging files
+*.gcno
+*.gcda
+*.gcov
+vgcore.*
+vgcore.*
+core
+*.profraw
