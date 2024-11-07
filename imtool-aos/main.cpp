@@ -1,56 +1,57 @@
 #include <iostream>
-#include "../common/progargs.hpp"
+#include <stdexcept>
 #include "../imgaos/imageaos.hpp"
 
+void printUsage() {
+    std::cout << "Uso: ./imtool-aos <input.ppm> <output.ppm> <operation> [params...]\n";
+    std::cout << "Operaciones disponibles:\n";
+    std::cout << "  resize <newWidth> <newHeight>\n";
+    std::cout << "  cutfreq <n>\n";  // Operación actualizada
+}
+
 int main(int argc, char* argv[]) {
-  try {
-    // Procesar los argumentos de la línea de comandos
-    ProgramArgs args = processArgs(argc, argv);
-
-    // Ejecutar la operación solicitada
-    if (args.operation == "info") {
-      // Obtener y mostrar los metadatos del archivo PPM
-      PPMMetadata metadata = getPPMMetadata(args.inputFile);
-      std::cout << "Operación: info\n"
-                << "Archivo de entrada: " << args.inputFile << "\n"
-                << "Número mágico: " << metadata.magicNumber << "\n"
-                << "Ancho: " << metadata.width << "\n"
-                << "Alto: " << metadata.height << "\n"
-                << "Valor máximo de color: " << metadata.maxColorValue << '\n';
-
-    } else if (args.operation == "maxlevel") {
-      // Escalar los niveles de intensidad de la imagen
-      int maxLevel = std::stoi(args.extraParams[0]);
-      std::cout << "Operación: maxlevel\nNuevo valor: " << maxLevel << '\n';
-
-      // Obtener los metadatos y los píxeles de la imagen
-      PPMMetadata metadata = getPPMMetadata(args.inputFile);
-      std::vector<Pixel> pixels = loadImage(args.inputFile, metadata.width, metadata.height, metadata.maxColorValue);
-
-      // Escalar la intensidad al nuevo valor máximo
-      scaleIntensity(pixels, metadata.maxColorValue, maxLevel);
-
-      // Guardar la imagen escalada en el archivo de salida
-      saveImage(args.outputFile, pixels, metadata.width, metadata.height, maxLevel);
-
-    } else if (args.operation == "resize") {
-      int newWidth = std::stoi(args.extraParams[0]);
-      int newHeight = std::stoi(args.extraParams[1]);
-      std::cout << "Operación: resize\nAncho nuevo: " << newWidth
-                << "\nAlto nuevo: " << newHeight << '\n';
-
-    } else if (args.operation == "cutfreq") {
-      int n = std::stoi(args.extraParams[0]);
-      std::cout << "Operación: cutfreq\nColores a eliminar: " << n << '\n';
-
-    } else if (args.operation == "compress") {
-      std::cout << "Operación: compress\n";
+    if (argc < 4) {
+        printUsage();
+        return 1;
     }
 
-  } catch (const std::exception& e) {
-    std::cerr << e.what() << '\n';
-    return -1;  // Devolver código de error
-  }
+    std::string inputFilename = argv[1];
+    std::string outputFilename = argv[2];
+    std::string operation = argv[3];
 
-  return 0;
+    try {
+        PPMMetadata metadata = getPPMMetadata(inputFilename);
+        std::vector<Pixel> pixels = loadImage(inputFilename, metadata.width, metadata.height, metadata.maxColorValue);
+
+        if (operation == "resize") {
+            if (argc != 6) {
+                printUsage();
+                return 1;
+            }
+            int newWidth = std::stoi(argv[4]);
+            int newHeight = std::stoi(argv[5]);
+            pixels = resizeImage(pixels, metadata.width, metadata.height, newWidth, newHeight);
+            saveImage(outputFilename, pixels, newWidth, newHeight, metadata.maxColorValue);
+        } else if (operation == "cutfreq") {
+            if (argc != 5) {
+                std::cerr << "Error: Invalid number of extra arguments for cutfreq: " << argc - 4 << std::endl;
+                return -1;
+            }
+            int n = std::stoi(argv[4]);
+            if (n <= 0) {
+                std::cerr << "Error: Invalid cutfreq: " << n << std::endl;
+                return -1;
+            }
+            pixels = removeLeastFrequentColors(pixels, n); // Implementar la lógica de cutfreq
+            saveImage(outputFilename, pixels, metadata.width, metadata.height, metadata.maxColorValue);
+        } else {
+            printUsage();
+            return 1;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
