@@ -1,4 +1,5 @@
 *.ppm
+build
 
 # Ignore build directories
 cmake-build-*/
