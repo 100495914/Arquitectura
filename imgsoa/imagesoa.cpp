@@ -4,124 +4,65 @@
 #include "imagesoa.hpp"
 
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
-void scaleIntensity(ImageSOA_8bit & pixels, int currentMax, int newMax) {
-  // Usar tres bucles mejor para optimizacion de cache, (probablemente)
-  for (auto & redPixel : pixels.red) {
-    redPixel =
-        static_cast<uint8_t>(std::round(redPixel * static_cast<double>(newMax) / currentMax));
-  }
-  for (auto & greenPixel : pixels.green) {
-    greenPixel =
-        static_cast<uint8_t>(std::round(greenPixel * static_cast<double>(newMax) / currentMax));
-  }
-  for (auto & bluePixel : pixels.blue) {
-    bluePixel =
-        static_cast<uint8_t>(std::round(bluePixel * static_cast<double>(newMax) / currentMax));
+// Resize the image (resize all color channels)
+void ImageSOA_8bit::resize(uint width, uint height) {
+  auto newSize = static_cast<size_t>(width * height);
+  // TODO
+}
+
+// Scale intensity for each channel (for 8-bit values)
+void ImageSOA_8bit::scaleIntensity(uint currentMax, uint newMax) {
+  auto const scale = static_cast<float>(newMax) / static_cast<float>(currentMax);
+
+  for (size_t i = 0; i < red.size(); ++i) {
+    red[i]   = std::min(static_cast<uint8_t>(static_cast<float>(red[i]) * scale), static_cast<uint8_t>(newMax));
+    green[i] = std::min(static_cast<uint8_t>(static_cast<float>(green[i]) * scale), static_cast<uint8_t>(newMax));
+    blue[i]  = std::min(static_cast<uint8_t>(static_cast<float>(blue[i]) * scale), static_cast<uint8_t>(newMax));
   }
 }
 
-void scaleIntensity(ImageSOA_16bit & pixels, int currentMax, int newMax) {
-  for (auto & redPixel : pixels.red) {
-    redPixel =
-        static_cast<uint16_t>(std::round(redPixel * static_cast<double>(newMax) / currentMax));
-  }
-  for (auto & greenPixel : pixels.green) {
-    greenPixel =
-        static_cast<uint16_t>(std::round(greenPixel * static_cast<double>(newMax) / currentMax));
-  }
-  for (auto & bluePixel : pixels.blue) {
-    bluePixel =
-        static_cast<uint16_t>(std::round(bluePixel * static_cast<double>(newMax) / currentMax));
+// Remove the least frequent colors from the image
+void ImageSOA_8bit::removeLeastFrequentColors(int n) {
+  std::cout << "Removing " << n << " least frequent colors from 8-bit image." << '\n';
+  // TODO
+}
+
+// Compress the image (example function, adjust as needed)
+void ImageSOA_8bit::compress() {
+  std::cout << "Compressing 8-bit image." << '\n';
+  // TODO
+}
+
+// Resize the image (resize all color channels)
+void ImageSOA_16bit::resize(uint width, uint height) {
+  auto newSize = static_cast<size_t>(width * height);
+  // TODO
+}
+
+// Scale intensity for each channel (for 16-bit values)
+void ImageSOA_16bit::scaleIntensity(uint currentMax, uint newMax) {
+  auto const scale = static_cast<float>(newMax) / static_cast<float>(currentMax);
+
+  for (size_t i = 0; i < red.size(); ++i) {
+    red[i]   = std::min(static_cast<uint16_t>(static_cast<float>(red[i]) * scale), static_cast<uint16_t>(newMax));
+    green[i] = std::min(static_cast<uint16_t>(static_cast<float>(green[i]) * scale), static_cast<uint16_t>(newMax));
+    blue[i]  = std::min(static_cast<uint16_t>(static_cast<float>(blue[i]) * scale), static_cast<uint16_t>(newMax));
   }
 }
 
-namespace {
-  // Helper function to load pixel data into the ImageSOA_8bit struct
-  void hlpr_loadPixelData(std::ifstream & file, size_t const totalPixels, ImageSOA_8bit & image) {
-    for (size_t i = 0; i < totalPixels; ++i) {
-      uint8_t red   = 0;
-      uint8_t green = 0;
-      uint8_t blue  = 0;
-      file.read(reinterpret_cast<char *>(&red), sizeof(red));
-      file.read(reinterpret_cast<char *>(&green), sizeof(green));
-      file.read(reinterpret_cast<char *>(&blue), sizeof(blue));
-
-      image.red[i]   = red;
-      image.green[i] = green;
-      image.blue[i]  = blue;
-    }
-  }
-
-  // Helper function to load pixel data into the ImageSOA_16bit struct
-  void hlpr_loadPixelData(std::ifstream & file, size_t const totalPixels, ImageSOA_16bit & image) {
-    for (size_t i = 0; i < totalPixels; ++i) {
-      uint16_t red   = 0;
-      uint16_t green = 0;
-      uint16_t blue  = 0;
-      file.read(reinterpret_cast<char *>(&red), sizeof(red));
-      file.read(reinterpret_cast<char *>(&green), sizeof(green));
-      file.read(reinterpret_cast<char *>(&blue), sizeof(blue));
-
-      image.red[i]   = red;
-      image.green[i] = green;
-      image.blue[i]  = blue;
-    }
-  }
-
-  // Helper function to load image data (open file, skip header, read pixels) for 8-bit images
-  ImageSOA_8bit hlpr_loadImageData_8bit(std::string const & filename, size_t totalPixels) {
-    ImageSOA_8bit image(totalPixels);
-
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) { throw std::ios_base::failure("Failed to open the file."); }
-
-    hlpr_loadPixelData(file, totalPixels, image);
-    file.close();
-    return image;
-  }
-
-  // Helper function to load image data (open file, skip header, read pixels) for 16-bit images
-  ImageSOA_16bit hlpr_loadImageData_16bit(std::string const & filename, size_t totalPixels) {
-    ImageSOA_16bit image(totalPixels);
-
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) { throw std::ios_base::failure("Failed to open the file."); }
-
-    hlpr_loadPixelData(file, totalPixels, image);
-    file.close();
-    return image;
-  }
-}  // namespace
-
-std::variant<ImageSOA_8bit, ImageSOA_16bit> loadImage(std::string const & filename,
-                                                      PPMMetadata const & metadata) {
-  size_t const totalPixels =
-      static_cast<size_t>(metadata.width) * static_cast<size_t>(metadata.height);
-
-  if (metadata.maxColorValue <= MAX_8BIT_VALUE) {
-    return hlpr_loadImageData_8bit(filename, totalPixels);
-  }
-  if (metadata.maxColorValue <= MAX_16BIT_VALUE) {
-    return hlpr_loadImageData_16bit(filename, totalPixels);
-  }
-  throw std::invalid_argument("Invalid maxColorValue for 8-bit image. Must be <= 255.");
+// Remove the least frequent colors from the image
+void ImageSOA_16bit::removeLeastFrequentColors(int n) {
+  std::cout << "Removing " << n << " least frequent colors from 16-bit image." << '\n';
+  // TODO
 }
 
-PPMMetadata getPPMMetadata(const std::string& filename) {
-  std::ifstream file(filename, std::ios::binary);
-  if (!file.is_open()) {
-    throw std::runtime_error("Unable to open file: " + filename);
-  }
-
-  PPMMetadata metadata;
-  file >> metadata.magicNumber;
-  file >> metadata.width >> metadata.height >> metadata.maxColorValue;
-  file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  file.close();
-
-  return metadata;
+// Compress the image (example function, adjust as needed)
+void ImageSOA_16bit::compress() {
+  std::cout << "Compressing 16-bit image." << '\n';
+  // TODO
 }

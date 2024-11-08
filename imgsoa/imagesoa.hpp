@@ -10,57 +10,81 @@
 #include <variant>
 #include <vector>
 
-// Para imagenes con pixeles de 8 bits
-struct ImageSOA_8bit {
-    std::vector<uint8_t> red, green, blue;
-
-    explicit ImageSOA_8bit(size_t const size) : red(size), green(size), blue(size) { }
+struct PPMMetadata {
+    std::string magicNumber;
+    uint width;
+    uint height;
+    uint16_t maxColorValue;
 };
 
-// Para imagenes con pixeles de 16 bits
-struct ImageSOA_16bit {
-    std::vector<uint16_t> red, green, blue;
+class ImageSOA {
+  public:
+    virtual ~ImageSOA() = default;
 
-    explicit ImageSOA_16bit(size_t const size) : red(size), green(size), blue(size) { }
+    // Delete copy and move operations
+    ImageSOA(ImageSOA const &) = delete;
+
+    explicit ImageSOA(PPMMetadata metadata)
+      : magicNumber(std::move(metadata.magicNumber)), width(metadata.width),
+        height(metadata.height), maxColorValue(metadata.maxColorValue) { }
+
+    ImageSOA & operator=(ImageSOA const &) = delete;
+
+    ImageSOA(ImageSOA &&)             = delete;
+    ImageSOA & operator=(ImageSOA &&) = delete;
+
+    // Virtual functions to be implemented by derived classes
+    virtual void resize(uint width, uint height)              = 0;
+    virtual void scaleIntensity(uint currentMax, uint newMax) = 0;
+    virtual void removeLeastFrequentColors(int n)             = 0;
+
+  protected:
+    std::string magicNumber;
+    unsigned long width;
+    unsigned long height;
+    uint16_t maxColorValue;
+};
+
+class ImageSOA_8bit final : public ImageSOA {
+  public:
+    explicit ImageSOA_8bit(PPMMetadata const & metadata)
+      : ImageSOA(metadata), red(width * height), green(width * height), blue(width * height) { }
+
+    // Implement the virtual functions for 8-bit images
+    void resize(uint width, uint height) override;
+    void scaleIntensity(uint currentMax, uint newMax) override;
+    void removeLeastFrequentColors(int n) override;
+    void compress();
+
+  protected:
+    std::vector<uint8_t> red;
+    std::vector<uint8_t> green;
+    std::vector<uint8_t> blue;
+};
+
+class ImageSOA_16bit final : public ImageSOA {
+  public:
+    explicit ImageSOA_16bit(PPMMetadata const & metadata)
+      : ImageSOA(metadata), red(width * height), green(width * height), blue(width * height) { }
+
+    // Implement the virtual functions for 16-bit images
+    void resize(uint width, uint height) override;
+    void scaleIntensity(uint currentMax, uint newMax) override;
+    void removeLeastFrequentColors(int n) override;
+    void compress();
+
+  protected:
+    std::vector<uint16_t> red;
+    std::vector<uint16_t> green;
+    std::vector<uint16_t> blue;
 };
 
 constexpr int MAX_8BIT_VALUE  = 255;
 constexpr int MAX_16BIT_VALUE = 65535;
-
-struct PPMMetadata {
-    std::string magicNumber;
-    int width;
-    int height;
-    int maxColorValue;
-};
 
 struct imageDimensions {
     uint width;
     uint height;
 };
 
-// Función para escalar la intensidad de cada píxel al nuevo valor máximo
-// NOTA: Se puede hacer con 8 y 16 bit con una funcion, pero queda mucho menos legible
-void scaleIntensity(ImageSOA_8bit & pixels, int currentMax, int newMax);
-
-void scaleIntensity(ImageSOA_16bit & pixels, int currentMax, int newMax);
-
-std::variant<ImageSOA_8bit, ImageSOA_16bit> loadImage(std::string const & filename,
-                                                      PPMMetadata & metadata);
-
-PPMMetadata getPPMMetadata(std::string const & filename);
-
-void resizeImage(ImageSOA_8bit & pixels, PPMMetadata & metadata, imageDimensions newDimensions);
-
-void resizeImage(ImageSOA_16bit & pixels, PPMMetadata & metadata, imageDimensions newDimensions);
-
-void saveImage(std::string const & filename, ImageSOA_8bit const & image,
-               imageDimensions dimensions, int maxColorValue);
-
-void saveImage(std::string const & filename, ImageSOA_16bit const & image,
-               imageDimensions dimensions, int maxColorValue);
-std::variant<ImageSOA_8bit, ImageSOA_16bit> removeLeastFrequentColors(ImageSOA_8bit const & imagen,
-                                                                      int n);
-std::variant<ImageSOA_8bit, ImageSOA_16bit> removeLeastFrequentColors(ImageSOA_16bit const & imagen,
-                                                                      int n);
 #endif  // IMAGESOA_HPP
