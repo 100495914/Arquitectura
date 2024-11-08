@@ -15,12 +15,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string inputFilename = argv[1];
-    std::string outputFilename = argv[2];
-    std::string operation = argv[3];
+    std::string const inputFilename = argv[1];
+    std::string const outputFilename = argv[2];
+    std::string const operation = argv[3];
 
     try {
-        PPMMetadata metadata = getPPMMetadata(inputFilename);
+        PPMMetadata const metadata = getPPMMetadata(inputFilename);
         std::vector<Pixel> pixels = loadImage(inputFilename, metadata.width, metadata.height, metadata.maxColorValue);
 
         if (operation == "resize") {
@@ -28,18 +28,18 @@ int main(int argc, char* argv[]) {
                 printUsage();
                 return 1;
             }
-            int newWidth = std::stoi(argv[4]);
-            int newHeight = std::stoi(argv[5]);
+            int const newWidth = std::stoi(argv[4]);
+            int const newHeight = std::stoi(argv[5]);
             pixels = resizeImage(pixels, metadata.width, metadata.height, newWidth, newHeight);
             saveImage(outputFilename, pixels, newWidth, newHeight, metadata.maxColorValue);
         } else if (operation == "cutfreq") {
             if (argc != 5) {
-                std::cerr << "Error: Invalid number of extra arguments for cutfreq: " << argc - 4 << std::endl;
+                std::cerr << "Error: Invalid number of extra arguments for cutfreq: " << argc - 4 << '\n';
                 return -1;
             }
-            int n = std::stoi(argv[4]);
+            int const n = std::stoi(argv[4]);
             if (n <= 0) {
-                std::cerr << "Error: Invalid cutfreq: " << n << std::endl;
+                std::cerr << "Error: Invalid cutfreq: " << n << '\n';
                 return -1;
             }
             pixels = removeLeastFrequentColors(pixels, n); // Implementar la lógica de cutfreq
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << '\n';
         return 1;
     }
 
