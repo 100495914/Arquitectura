@@ -10,7 +10,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept>
-
+#include <variant>
 
 std::unique_ptr<ImageSOA> loadImage(std::string const & filepath) {
   std::cerr << "Trying to open: " << filepath << '\n';
@@ -112,12 +112,47 @@ void ImageSOA_8bit::scaleIntensity(uint const newMax) {
   }
 }
 
+std::unique_ptr<ImageSOA_16bit>
+    ImageSOA_8bit::scaleIntensityChannelSizeChange(uint const newMax) const {
+  if (newMax > MAX_16BIT_VALUE) {
+    throw std::invalid_argument("newMax exceeds the 16-bit integer range");
+  }
+  if (newMax <= MAX_8BIT_VALUE) {
+    throw std::invalid_argument("newMax is within 8-bit range; this function is not necessary");
+  }
+
+  // Create new metadata for the scaled image
+  PPMMetadata metadata;
+  metadata.maxColorValue = newMax;
+  metadata.magicNumber   = gMagicNumber();
+  metadata.width         = gWidth();
+  metadata.height        = gHeight();
+
+  // Create a new 16-bit image with the updated metadata
+  auto image = std::make_unique<ImageSOA_16bit>(metadata);
+
+  // Calculate scaling factor
+  auto const scale = static_cast<float>(newMax) / static_cast<float>(gMaxColorValue());
+
+  for (uint16_t & subpixel : image->gRed()) {
+    subpixel = static_cast<uint16_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+  for (uint16_t & subpixel : image->gGreen()) {
+    subpixel = static_cast<uint16_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+  for (uint16_t & subpixel : image->gBlue()) {
+    subpixel = static_cast<uint16_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+
+  return image;
+}
+
 void ImageSOA_16bit::loadData(std::ifstream & file) {
   if (!file.is_open()) { throw std::ios_base::failure("Failed to open the file."); }
 
   // Skip width, height, and max color value
-  size_t width = 0;
-  size_t height = 0;
+  size_t width         = 0;
+  size_t height        = 0;
   size_t maxColorValue = 0;
   file >> width >> height >> maxColorValue;
 
@@ -128,14 +163,12 @@ void ImageSOA_16bit::loadData(std::ifstream & file) {
 
   // Skip any remaining newline after header
   file.ignore(1, '\n');
-  uint16_t red = 0;
+  uint16_t red   = 0;
   uint16_t green = 0;
-  uint16_t blue = 0;
+  uint16_t blue  = 0;
   // Read pixel data (each pixel consists of 6 bytes: R, G, B, each 2 bytes)
   size_t const size = static_cast<size_t>(gWidth()) * gHeight();
   for (size_t i = 0; i < size; ++i) {
-
-
     // Read each channel as 2 bytes
     file.read(reinterpret_cast<char *>(&red), sizeof(red));
     file.read(reinterpret_cast<char *>(&green), sizeof(green));
@@ -167,9 +200,9 @@ void ImageSOA_16bit::saveToFile(std::string const & filename) {
   // Write pixel data (each pixel consists of 6 bytes: R, G, B, each 2 bytes)
   size_t const size = static_cast<size_t>(gWidth()) * gHeight();
   for (size_t i = 0; i < size; ++i) {
-    uint16_t red = gRed()[i];
+    uint16_t red   = gRed()[i];
     uint16_t green = gGreen()[i];
-    uint16_t blue = gBlue()[i];
+    uint16_t blue  = gBlue()[i];
     file.write(reinterpret_cast<char const *>(&red), sizeof(red));
     file.write(reinterpret_cast<char const *>(&green), sizeof(green));
     file.write(reinterpret_cast<char const *>(&blue), sizeof(blue));
@@ -198,22 +231,51 @@ void ImageSOA_16bit::scaleIntensity(uint const newMax) {
   }
 }
 
+std::unique_ptr<ImageSOA_8bit>
+    ImageSOA_16bit::scaleIntensityChannelSizeChange(uint const newMax) const {
+  if (newMax > MAX_16BIT_VALUE) {
+    throw std::invalid_argument("newMax exceeds the 16-bit integer range");
+  }
+  if (newMax <= MAX_8BIT_VALUE) {
+    throw std::invalid_argument("newMax is within 8-bit range; this function is not necessary");
+  }
+
+  // Create new metadata for the scaled image
+  PPMMetadata metadata;
+  metadata.maxColorValue = newMax;
+  metadata.magicNumber   = gMagicNumber();
+  metadata.width         = gWidth();
+  metadata.height        = gHeight();
+
+  // Create a new 16-bit image with the updated metadata
+  auto image = std::make_unique<ImageSOA_8bit>(metadata);
+
+  // Calculate scaling factor
+  auto const scale = static_cast<float>(newMax) / static_cast<float>(gMaxColorValue());
+
+  for (uint8_t & subpixel : image->gRed()) {
+    subpixel = static_cast<uint8_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+  for (uint8_t & subpixel : image->gGreen()) {
+    subpixel = static_cast<uint8_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+  for (uint8_t & subpixel : image->gBlue()) {
+    subpixel = static_cast<uint8_t>(std::floor(static_cast<float>(subpixel) * scale));
+  }
+
+  return image;
+}
+
 int main() {
   try {
+    std::string const input  = "../input/sabatini.ppm";
+    std::string const output = "../output/sabatini.ppm";
     // Load an image from file (assumed to be in PPM P6 format with 16-bit channels)
-    auto const image = loadImage("../input/sabatini.ppm");
-
+    auto const image = loadImage(input);
     // Optionally, perform image processing here (scaling, manipulation, etc.)
-    image->scaleIntensity(128);
+    image->scaleIntensityChannelSizeChange(10000);
 
-    // Save the image to a new file
-    image->saveToFile("../output/sabatini.ppm");
-
-    std::cout << "Image saved successfully!" << '\n';
-  }
-  catch (const std::exception& e) {
-    std::cerr << "Error: " << e.what() << '\n';
-  }
+  } catch (std::exception const & e) { std::cerr << "Error: " << e.what() << '\n'; }
 
   return 0;
 }
