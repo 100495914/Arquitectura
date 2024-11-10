@@ -170,7 +170,7 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
     });
 
     std::set<Pixel> colorsToKeep;
-    for (size_t i = static_cast<size_t>(n); i < colorFreqVec.size(); ++i) { // Conversión segura
+    for (auto i = static_cast<size_t>(n); i < colorFreqVec.size(); ++i) { // Conversión segura
         colorsToKeep.insert(colorFreqVec[i].first);
     }
 
