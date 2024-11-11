@@ -8,8 +8,8 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
 constexpr uint8_t MAX_8BIT_VALUE   = 255;
 constexpr uint16_t MAX_16BIT_VALUE = 65535;
@@ -44,7 +44,7 @@ class ImageSOA {
     virtual void saveToFile(std::string const & filename) = 0;
 
     // Virtual functions to be implemented by derived classes
-    virtual void scaleIntensity(uint newMax)              = 0;
+    virtual void scaleIntensity(uint newMax) = 0;
 
     // Setters
     void sWidth(unsigned int const newWidth) { width = newWidth; }
@@ -63,8 +63,6 @@ class ImageSOA {
     [[nodiscard]] uint16_t gMaxColorValue() const { return maxColorValue; }
 
     [[nodiscard]] std::string const & gMagicNumber() const { return magicNumber; }
-
-
 
   private:
     std::string magicNumber;
@@ -90,7 +88,8 @@ class ImageSOA_8bit : public ImageSOA {
     [[nodiscard]] std::vector<uint8_t> & gBlue() { return blue; }
 
     void scaleIntensity(uint newMax) override;
-    [[nodiscard]] std::unique_ptr<ImageSOA_16bit> scaleIntensityChannelSizeChange(uint newMax) const;
+    [[nodiscard]] std::unique_ptr<ImageSOA_16bit>
+        scaleIntensityChannelSizeChange(uint newMax);
 
   private:
     std::vector<uint8_t> red;
@@ -115,7 +114,7 @@ class ImageSOA_16bit : public ImageSOA {
     [[nodiscard]] std::vector<uint16_t> & gBlue() { return blue; }
 
     void scaleIntensity(uint newMax) override;
-    [[nodiscard]] std::unique_ptr<ImageSOA_8bit> scaleIntensityChannelSizeChange(uint newMax) const;
+    [[nodiscard]] std::unique_ptr<ImageSOA_8bit> scaleIntensityChannelSizeChange(uint newMax);
 
   private:
     std::vector<uint16_t> red;
@@ -123,6 +122,9 @@ class ImageSOA_16bit : public ImageSOA {
     std::vector<uint16_t> blue;
 };
 
-std::unique_ptr<ImageSOA> loadImage(std::string const & filepath);
+using genericImageSOA =
+    std::variant<std::unique_ptr<ImageSOA_16bit>, std::unique_ptr<ImageSOA_8bit>>;
+
+genericImageSOA loadImage(std::string const & filepath);
 
 #endif  // IMAGESOA_HPP
