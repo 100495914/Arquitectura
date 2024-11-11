@@ -206,20 +206,21 @@ void ImageSOA_16bit::saveToFile(std::string const & filename) {
   uint16_t const hex_ff      = 0xFF;
   uint16_t const shift_value = 8;
   size_t const size          = static_cast<size_t>(gWidth()) * gHeight();
+
   for (size_t i = 0; i < size; ++i) {
     uint16_t const red   = gRed()[i];
     uint16_t const green = gGreen()[i];
     uint16_t const blue  = gBlue()[i];
 
-    // Use std::array instead of C-style array
-    std::array<char, 2> redBytes   = {static_cast<char>(red & hex_ff),
-                                      static_cast<char>((red >> shift_value) & hex_ff)};
-    std::array<char, 2> greenBytes = {static_cast<char>(green & hex_ff),
-                                      static_cast<char>((green >> shift_value) & hex_ff)};
-    std::array<char, 2> blueBytes  = {static_cast<char>(blue & hex_ff),
-                                      static_cast<char>((blue >> shift_value) & hex_ff)};
+    // Invert the byte order for each channel
+    std::array<char, 2> redBytes   = {static_cast<char>((red >> shift_value) & hex_ff),
+                                      static_cast<char>(red & hex_ff)};
+    std::array<char, 2> greenBytes = {static_cast<char>((green >> shift_value) & hex_ff),
+                                      static_cast<char>(green & hex_ff)};
+    std::array<char, 2> blueBytes  = {static_cast<char>((blue >> shift_value) & hex_ff),
+                                      static_cast<char>(blue & hex_ff)};
 
-    // Write the bytes to the file
+    // Write the inverted bytes to the file
     file.write(redBytes.data(), 2);
     file.write(greenBytes.data(), 2);
     file.write(blueBytes.data(), 2);
@@ -290,8 +291,8 @@ std::unique_ptr<ImageSOA_8bit> ImageSOA_16bit::scaleIntensityChannelSizeChange(u
 
 int main() {
   try {
-    std::string const input  = "../input/test.ppm";
-    std::string const output = "../output/test.ppm";
+    std::string const input  = "../input/sabatini.ppm";
+    std::string const output = "../output/sabatini.ppm";
 
     // Load an image from file
     auto const generic_image = loadImage(input);
@@ -300,7 +301,7 @@ int main() {
     std::visit(
         [output](auto && image) {
           // Perform image processing here (scaling, etc.)
-          auto n_image = image->scaleIntensityChannelSizeChange(30000);
+          auto n_image = image->scaleIntensityChannelSizeChange(MAX_16BIT_VALUE);
 
           // Save the newly created image (the scaled variant)
           if (n_image) {  // Only save if scaling produced a valid new image
