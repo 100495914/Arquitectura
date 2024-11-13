@@ -114,7 +114,9 @@ std::vector<Pixel> loadImage(const std::string& filename, const PPMMetadata& met
   std::string magicNumber;
   file >> magicNumber;
   file.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignora la línea completa después del magicNumber
-
+  PPMMetadata mdata;
+  file >> mdata.width >> mdata.height >> mdata.maxColorValue;
+  file.ignore(1, '\n');
   std::vector<Pixel> pixels(static_cast<std::vector<Pixel>::size_type>(metadata.width) * static_cast<std::vector<Pixel>::size_type>(metadata.height));
 
   constexpr int maxValue = 256;

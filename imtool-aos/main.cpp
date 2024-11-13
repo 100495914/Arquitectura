@@ -25,8 +25,9 @@ namespace {
     const int newHeight = std::stoi(arguments[5]);
     std::cout << "Operación: resize\nAncho nuevo: " << newWidth
               << "\nAlto nuevo: " << newHeight << '\n';
+    PPMMetadata const newMetadata = {.magicNumber = metadata.magicNumber, .width = newWidth, .height = newHeight, .maxColorValue = metadata.maxColorValue};
     pixels = resizeImage(pixels, metadata, newWidth, newHeight);
-    saveImage(outputFilename, pixels, metadata);
+    saveImage(outputFilename, pixels, newMetadata);
   }
 
   void handleCutFreq(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {
