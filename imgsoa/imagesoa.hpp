@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <memory>
 #include <string>
-#include <variant>
 #include <vector>
 
 constexpr uint8_t MAX_8BIT_VALUE   = 255;
@@ -18,7 +17,7 @@ struct PPMMetadata {
     std::string magicNumber;
     uint width;
     uint height;
-    uint16_t maxColorValue;
+    uint maxColorValue;
 };
 
 class ImageSOA_8bit;
@@ -40,9 +39,8 @@ class ImageSOA {
     ImageSOA(ImageSOA &&)             = delete;
     ImageSOA & operator=(ImageSOA &&) = delete;
 
-    virtual void loadData(std::ifstream & file)           = 0;
+    virtual void loadData(std::string const & filepath)   = 0;
     virtual void saveToFile(std::string const & filename) = 0;
-    virtual void saveToFileBE(std::string const & filename) = 0;
 
     // Virtual functions to be implemented by derived classes
     virtual void scaleIntensity(uint newMax) = 0;
@@ -52,16 +50,15 @@ class ImageSOA {
 
     void sHeight(unsigned int const newHeight) { height = newHeight; }
 
-    void sMaxColorValue(uint16_t const newMaxColorValue) { maxColorValue = newMaxColorValue; }
+    void sMaxColorValue(uint const newMaxColorValue) { maxColorValue = newMaxColorValue; }
 
     void sMagicNumber(std::string const & newMagicNumber) { magicNumber = newMagicNumber; }
 
-  protected:
     [[nodiscard]] uint gWidth() const { return width; }
 
     [[nodiscard]] uint gHeight() const { return height; }
 
-    [[nodiscard]] uint16_t gMaxColorValue() const { return maxColorValue; }
+    [[nodiscard]] uint gMaxColorValue() const { return maxColorValue; }
 
     [[nodiscard]] std::string const & gMagicNumber() const { return magicNumber; }
 
@@ -69,7 +66,7 @@ class ImageSOA {
     std::string magicNumber;
     unsigned int width;
     unsigned int height;
-    uint16_t maxColorValue;
+    uint maxColorValue;
 };
 
 class ImageSOA_8bit : public ImageSOA {
@@ -79,8 +76,7 @@ class ImageSOA_8bit : public ImageSOA {
         green(static_cast<size_t>(gWidth() * gHeight())),
         blue(static_cast<size_t>(gWidth() * gHeight())) { }
 
-    void loadData(std::ifstream & file) override;
-    void saveToFileBE(std::string const & filename) override;
+    void loadData(std::string const & filepath) override;
     void saveToFile(std::string const & filename) override;
 
     [[nodiscard]] std::vector<uint8_t> & gRed() { return red; }
@@ -90,8 +86,7 @@ class ImageSOA_8bit : public ImageSOA {
     [[nodiscard]] std::vector<uint8_t> & gBlue() { return blue; }
 
     void scaleIntensity(uint newMax) override;
-    [[nodiscard]] std::unique_ptr<ImageSOA_16bit>
-        scaleIntensityChannelSizeChange(uint newMax);
+    [[nodiscard]] std::unique_ptr<ImageSOA_16bit> scaleIntensityChannelSizeChange(uint newMax);
 
   private:
     std::vector<uint8_t> red;
@@ -106,8 +101,8 @@ class ImageSOA_16bit : public ImageSOA {
         green(static_cast<size_t>(gWidth() * gHeight())),
         blue(static_cast<size_t>(gWidth() * gHeight())) { }
 
-    void loadData(std::ifstream & file) override;
-    void saveToFileBE(std::string const & filename) override;
+    void loadData(std::string const & filepath) override;
+    void saveToFileBE(std::string const & filename);
     void saveToFile(std::string const & filename) override;
 
     [[nodiscard]] std::vector<uint16_t> & gRed() { return red; }
@@ -125,9 +120,8 @@ class ImageSOA_16bit : public ImageSOA {
     std::vector<uint16_t> blue;
 };
 
-using genericImageSOA =
-    std::variant<std::unique_ptr<ImageSOA_16bit>, std::unique_ptr<ImageSOA_8bit>>;
+PPMMetadata loadMetadata(std::string const & filepath);
 
-genericImageSOA loadImage(std::string const & filepath);
+int numberInXbitRange(uint number);
 
 #endif  // IMAGESOA_HPP

@@ -6,6 +6,8 @@ add_library(common
         progargs.hpp
         PPMMetadata.hpp
         getPPMMetadata.cpp
+        imtool_soa_aux.cpp
+        imtool_soa_aux.hpp
 )
 # Use this line only if you have dependencies from this library to GSL
 target_link_libraries(common PRIVATE Microsoft.GSL::GSL)
