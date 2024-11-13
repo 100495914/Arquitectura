@@ -36,7 +36,7 @@ PPMMetadata getPPMMetadata(const std::string& filename);
 
 // Función para escalar la intensidad de cada píxel al nuevo valor máximo
 void scaleIntensity8bit(std::vector<Pixel>& pixels, int currentMax, int newMax);
-void scaleIntensity16bit(std::vector<Pixel>& pixels, int currentMax, int newMax);
+void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax);
 // Función para cargar una imagen PPM en un vector de píxeles
 std::vector<Pixel> loadImage(const std::string& filename, const PPMMetadata& metadata);
 

@@ -8,16 +8,7 @@
 #include <set>
 #include <stdexcept>
 
-void scaleIntensity8bit(std::vector<Pixel> & pixels, int currentMax, int newMax) {
-  double const scaleFactor = static_cast<double>(newMax) / currentMax;
-  for (auto & pixel : pixels) {
-    pixel.red   = static_cast<uint8_t>(std::floor(static_cast<float>(pixel.red) * scaleFactor));
-    pixel.green = static_cast<uint8_t>(std::floor(static_cast<float>(pixel.green) * scaleFactor));
-    pixel.blue  = static_cast<uint8_t>(std::floor(static_cast<float>(pixel.blue) * scaleFactor));
-  }
-}
-
-void scaleIntensity16bit(std::vector<Pixel> & pixels, int currentMax, int newMax) {
+void scaleIntensity(std::vector<Pixel> & pixels, int currentMax, int newMax) {
   double const scaleFactor = static_cast<double>(newMax) / currentMax;
   for (auto & pixel : pixels) {
     pixel.red   = static_cast<uint16_t>(std::floor(static_cast<float>(pixel.red) * scaleFactor));

@@ -7,6 +7,5 @@
 #include <sys/types.h>
 
 int numberInXbitRange(uint number);
-int numberInXbitRange(int number);
 
 #endif //MISC_HPP
