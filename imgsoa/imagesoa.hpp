@@ -20,6 +20,26 @@ struct PPMMetadata {
     uint maxColorValue;
 };
 
+struct Dimensions {
+    size_t width;
+    size_t height;
+};
+
+struct PixelPair8 {
+    uint8_t lower;
+    uint8_t upper;
+};
+
+struct PixelPair16 {
+    uint16_t lower;
+    uint16_t upper;
+};
+
+struct Weights {
+    float xWeight;
+    float yWeight;
+};
+
 class ImageSOA_8bit;
 class ImageSOA_16bit;
 
@@ -43,7 +63,7 @@ class ImageSOA {
     virtual void saveToFile(std::string const & filename) = 0;
 
     // Virtual functions to be implemented by derived classes
-    virtual void scaleIntensity(uint newMax) = 0;
+    virtual void maxLevel(uint newMax) = 0;
 
     // Setters
     void sWidth(unsigned int const newWidth) { width = newWidth; }
@@ -85,8 +105,13 @@ class ImageSOA_8bit : public ImageSOA {
 
     [[nodiscard]] std::vector<uint8_t> & gBlue() { return blue; }
 
-    void scaleIntensity(uint newMax) override;
-    [[nodiscard]] std::unique_ptr<ImageSOA_16bit> scaleIntensityChannelSizeChange(uint newMax);
+    void maxLevel(uint newMax) override;
+    [[nodiscard]] std::unique_ptr<ImageSOA_16bit> maxLevelChangeChannelSize(uint newMax);
+    static uint8_t interpolate(PixelPair8 const & lowerPair, PixelPair8 const & upperPair,
+                        Weights const & weights);
+    std::vector<uint8_t> resizeChannel(Dimensions const & resizeData,
+                                       std::vector<uint8_t> const & originalChannel);
+    void resizeImage(Dimensions const & resizeData);
 
   private:
     std::vector<uint8_t> red;
@@ -111,8 +136,13 @@ class ImageSOA_16bit : public ImageSOA {
 
     [[nodiscard]] std::vector<uint16_t> & gBlue() { return blue; }
 
-    void scaleIntensity(uint newMax) override;
-    [[nodiscard]] std::unique_ptr<ImageSOA_8bit> scaleIntensityChannelSizeChange(uint newMax);
+    void maxLevel(uint newMax) override;
+    [[nodiscard]] std::unique_ptr<ImageSOA_8bit> maxLevelChangeChannelSize(uint newMax);
+    static uint16_t interpolate(PixelPair16 const & lowerPair, PixelPair16 const & upperPair,
+                         Weights const & weights);
+    std::vector<uint16_t> resizeChannel(Dimensions const & resizeData,
+                                        std::vector<uint16_t> const & originalChannel);
+    void resizeImage(Dimensions const & resizeData);
 
   private:
     std::vector<uint16_t> red;

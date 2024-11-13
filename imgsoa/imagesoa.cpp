@@ -92,7 +92,7 @@ void ImageSOA_8bit::saveToFile(std::string const & filename) {
 }
 
 // Scale intensity for each channel (for 8-bit values)
-void ImageSOA_8bit::scaleIntensity(uint const newMax) {
+void ImageSOA_8bit::maxLevel(uint const newMax) {
   if (newMax > MAX_8BIT_VALUE) {
     throw std::invalid_argument(
         "newMax surpasses the 8-bit int limit, use the other scaling function");
@@ -107,9 +107,10 @@ void ImageSOA_8bit::scaleIntensity(uint const newMax) {
   for (uint8_t & subpixel : blue) {
     subpixel = static_cast<uint8_t>(std::floor(static_cast<float>(subpixel) * scale));
   }
+  sMaxColorValue(newMax);
 }
 
-std::unique_ptr<ImageSOA_16bit> ImageSOA_8bit::scaleIntensityChannelSizeChange(uint const newMax) {
+std::unique_ptr<ImageSOA_16bit> ImageSOA_8bit::maxLevelChangeChannelSize(uint const newMax) {
   if (newMax > MAX_16BIT_VALUE) {
     throw std::invalid_argument("newMax exceeds the 16-bit integer range");
   }
@@ -158,9 +159,9 @@ void ImageSOA_16bit::loadData(std::string const & filepath) {
     throw std::ios_base::failure("Image dimensions do not match expected size.");
   }
   file.ignore(1, '\n');
-  uint16_t red   = 0;
-  uint16_t green = 0;
-  uint16_t blue  = 0;
+  uint16_t red      = 0;
+  uint16_t green    = 0;
+  uint16_t blue     = 0;
   size_t const size = static_cast<size_t>(gWidth()) * gHeight();
   for (size_t i = 0; i < size; ++i) {
     file.read(reinterpret_cast<char *>(&red),  // NOLINT(*-pro-type-reinterpret-cast)
@@ -255,7 +256,7 @@ void ImageSOA_16bit::saveToFileBE(std::string const & filename) {
 }
 
 // Scale intensity for each channel (for 16-bit values)
-void ImageSOA_16bit::scaleIntensity(uint const newMax) {
+void ImageSOA_16bit::maxLevel(uint const newMax) {
   if (newMax > MAX_16BIT_VALUE) {
     throw std::invalid_argument("newMax surpasses the 16 bit int limit");
   }
@@ -272,9 +273,10 @@ void ImageSOA_16bit::scaleIntensity(uint const newMax) {
   for (uint16_t & subpixel : blue) {
     subpixel = static_cast<uint16_t>(std::floor(static_cast<float>(subpixel) * scale));
   }
+  sMaxColorValue(newMax);
 }
 
-std::unique_ptr<ImageSOA_8bit> ImageSOA_16bit::scaleIntensityChannelSizeChange(uint const newMax) {
+std::unique_ptr<ImageSOA_8bit> ImageSOA_16bit::maxLevelChangeChannelSize(uint const newMax) {
   if (newMax > MAX_16BIT_VALUE) {
     throw std::invalid_argument("newMax exceeds the 16-bit integer range");
   }
@@ -314,14 +316,118 @@ std::unique_ptr<ImageSOA_8bit> ImageSOA_16bit::scaleIntensityChannelSizeChange(u
   return image;
 }
 
-int numberInXbitRange(uint const number) {
-  if (number <= MAX_8BIT_VALUE) {
-    constexpr uint magic_number_8 = 8;
-    return magic_number_8;
+uint8_t ImageSOA_8bit::interpolate(PixelPair8 const & lowerPair, PixelPair8 const & upperPair,
+                                   Weights const & weights) {
+  uint8_t const color1 =
+      lowerPair.lower +
+      static_cast<uint8_t>(weights.xWeight * static_cast<float>(lowerPair.upper - lowerPair.lower));
+  uint8_t const color2 =
+      upperPair.lower +
+      static_cast<uint8_t>(weights.xWeight * static_cast<float>(upperPair.upper - upperPair.lower));
+  return static_cast<uint8_t>(static_cast<float>(color1) +
+                              (weights.yWeight * static_cast<float>(color2 - color1)));
+}
+
+std::vector<uint8_t> ImageSOA_8bit::resizeChannel(Dimensions const & resizeData,
+                                                  std::vector<uint8_t> const & originalChannel) {
+  std::vector<uint8_t> resizedChannel(resizeData.width * resizeData.height);
+  int const width_int  = static_cast<int>(gWidth());
+  int const height_int = static_cast<int>(gHeight());
+
+  for (size_t yPrime = 0; yPrime < resizeData.height; ++yPrime) {
+    for (size_t xPrime = 0; xPrime < resizeData.width; ++xPrime) {
+      float const normalizedX =
+          (static_cast<float>(xPrime * gWidth()) / static_cast<float>(resizeData.width));
+      float const normalizedY =
+          (static_cast<float>(yPrime * gHeight()) / static_cast<float>(resizeData.height));
+
+      int const lowerX = static_cast<int>(std::floor(normalizedX));
+      int const upperX = std::min(static_cast<int>(std::ceil(normalizedX)), width_int - 1);
+      int const lowerY = static_cast<int>(std::floor(normalizedY));
+      int const upperY = std::min(static_cast<int>(std::ceil(normalizedY)), height_int - 1);
+
+      // Get the four surrounding pixels
+      PixelPair8 const lowerPair = {
+        .lower = originalChannel[static_cast<uint8_t>((lowerY * width_int) + lowerX)],
+        .upper = originalChannel[static_cast<uint8_t>((lowerY * width_int) + upperX)]};
+      PixelPair8 const upperPair = {
+        .lower = originalChannel[static_cast<uint8_t>((upperY * width_int) + lowerX)],
+        .upper = originalChannel[static_cast<uint8_t>((upperY * width_int) + upperX)]};
+
+      // Calculate interpolation weights
+      Weights const weights = {.xWeight = normalizedX - static_cast<float>(lowerX),
+                               .yWeight = normalizedY - static_cast<float>(lowerY)};
+
+      // Interpolate and assign the value to the resized image
+      resizedChannel[(yPrime * resizeData.width) + xPrime] =
+          interpolate(lowerPair, upperPair, weights);
+    }
   }
-  if (number <= MAX_16BIT_VALUE) {
-    constexpr uint magic_number_16 = 16;
-    return magic_number_16;
+  return resizedChannel;
+}
+
+// Main function to resize the full image
+void ImageSOA_8bit::resizeImage(Dimensions const & resizeData) {
+  red   = resizeChannel(resizeData, red);
+  green = resizeChannel(resizeData, green);
+  blue  = resizeChannel(resizeData, blue);
+}
+
+uint16_t ImageSOA_16bit::interpolate(PixelPair16 const & lowerPair, PixelPair16 const & upperPair,
+                                     Weights const & weights) {
+  uint16_t const color1 =
+      lowerPair.lower +
+      static_cast<uint16_t>(weights.xWeight *
+                            static_cast<float>(lowerPair.upper - lowerPair.lower));
+  uint16_t const color2 =
+      upperPair.lower +
+      static_cast<uint16_t>(weights.xWeight *
+                            static_cast<float>(upperPair.upper - upperPair.lower));
+  return static_cast<uint16_t>(static_cast<float>(color1) +
+                               (weights.yWeight * static_cast<float>(color2 - color1)));
+}
+
+std::vector<uint16_t> ImageSOA_16bit::resizeChannel(Dimensions const & resizeData,
+                                                    std::vector<uint16_t> const & originalChannel) {
+  std::vector<uint16_t> resizedChannel(resizeData.width * resizeData.height);
+  int const width_int  = static_cast<int>(gWidth());
+  int const height_int = static_cast<int>(gHeight());
+
+  for (size_t yPrime = 0; yPrime < resizeData.height; ++yPrime) {
+    for (size_t xPrime = 0; xPrime < resizeData.width; ++xPrime) {
+      float const normalizedX =
+          (static_cast<float>(xPrime * gWidth()) / static_cast<float>(resizeData.width));
+      float const normalizedY =
+          (static_cast<float>(yPrime * gHeight()) / static_cast<float>(resizeData.height));
+
+      int const lowerX = static_cast<int>(std::floor(normalizedX));
+      int const upperX = std::min(static_cast<int>(std::ceil(normalizedX)), width_int - 1);
+      int const lowerY = static_cast<int>(std::floor(normalizedY));
+      int const upperY = std::min(static_cast<int>(std::ceil(normalizedY)), height_int - 1);
+
+      // Get the four surrounding pixels
+      PixelPair16 const lowerPair = {
+        .lower = originalChannel[static_cast<uint16_t>((lowerY * width_int) + lowerX)],
+        .upper = originalChannel[static_cast<uint16_t>((lowerY * width_int) + upperX)]};
+      PixelPair16 const upperPair = {
+        .lower = originalChannel[static_cast<uint16_t>((upperY * width_int) + lowerX)],
+        .upper = originalChannel[static_cast<uint16_t>((upperY * width_int) + upperX)]};
+
+      // Calculate interpolation weights
+      Weights const weights = {.xWeight = normalizedX - static_cast<float>(lowerX),
+                               .yWeight = normalizedY - static_cast<float>(lowerY)};
+
+      // Interpolate and assign the value to the resized image
+      resizedChannel[(yPrime * resizeData.width) + xPrime] =
+          interpolate(lowerPair, upperPair, weights);
+    }
   }
-  return -1;
+  return resizedChannel;
+}
+
+// Main function to resize the full image
+void ImageSOA_16bit::resizeImage(Dimensions const & resizeData) {
+  red   = resizeChannel(resizeData, red);
+  green = resizeChannel(resizeData, green);
+  blue  = resizeChannel(resizeData, blue);
 }

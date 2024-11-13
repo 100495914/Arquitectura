@@ -6,8 +6,6 @@
 #include <stdexcept>
 #include <variant>
 
-
-
 int main(int const argc, char * argv[]) {
   if (argc < 4) {
     printUsage();
@@ -22,12 +20,23 @@ int main(int const argc, char * argv[]) {
 
   try {
     switch (cmd->operation) {
-      case 1:  // Maxlevel
-        handleMaxLevel(cmd.value());
+      case 1:
+        {
+          // Maxlevel
+          handleMaxLevel(cmd.value());
+        }
         break;  // Add the break to avoid fall-through to the default case
+      case 2:
+        {
+          // Resize
+          handleResize(cmd.value());
+        }
+      break;
       default:
-        std::cerr << "Error: Operacion no reconocida.\n";
-        return -1;
+        {
+          std::cerr << "Error: Operacion no reconocida.\n";
+          return -1;
+        }
     }
   } catch (std::exception const & e) {
     std::cerr << "Error: " << e.what() << "\n";

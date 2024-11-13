@@ -10,7 +10,7 @@
 #include <optional>
 
 namespace {
-  constexpr int cinco = 5;
+  constexpr int cinco     = 5;
   constexpr int ocho      = 8;
   constexpr int dieciseis = 16;
 
@@ -87,11 +87,11 @@ namespace {
 
     // Handle scaling based on new max range
     if (newMaxBitType == ocho) {
-      image8->scaleIntensity(newMax);
+      image8->maxLevel(newMax);
       image8->saveToFile(output);
     } else if (newMaxBitType == dieciseis) {
       // Scale to 16-bit and save
-      auto image8_16 = image8->scaleIntensityChannelSizeChange(newMax);
+      auto image8_16 = image8->maxLevelChangeChannelSize(newMax);
       image8_16->saveToFile(output);
     } else {
       std::cerr << "Rango de newMax no valido.\n";
@@ -110,11 +110,11 @@ namespace {
 
     // Handle scaling based on new max range
     if (newMaxBitType == dieciseis) {
-      image16->scaleIntensity(newMax);
+      image16->maxLevel(newMax);
       image16->saveToFile(output);
     } else if (newMaxBitType == ocho) {
       // Scale to 8-bit and save
-      auto const image16_8 = image16->scaleIntensityChannelSizeChange(newMax);
+      auto const image16_8 = image16->maxLevelChangeChannelSize(newMax);
       image16_8->saveToFile(output);
     } else {
       std::cerr << "Rango de newMax no valido.\n";
@@ -136,6 +136,39 @@ void handleMaxLevel(Command const & cmd) {
         break;
       default:
         std::cerr << "Unsupported image bit type.\n";
+        break;
+    }
+
+  } catch (std::exception const & e) { std::cerr << "Error: " << e.what() << '\n'; }
+}
+
+void handleResize(Command const & cmd) {
+  try {
+    std::string const input    = cmd.input;
+    PPMMetadata const metadata = loadMetadata(input);
+    Dimensions const dim       = {.width  = static_cast<size_t>(cmd.op1),
+                                  .height = static_cast<size_t>(cmd.op2)};
+    switch (numberInXbitRange(metadata.maxColorValue)) {
+      case ocho:
+        {
+          auto const image8 = std::make_unique<ImageSOA_8bit>(metadata);
+          image8->loadData(input);
+          image8->resizeImage(dim);
+          image8->saveToFile(cmd.output);
+          break;
+        }
+      case dieciseis:
+        {
+          auto const image16 = std::make_unique<ImageSOA_16bit>(metadata);
+          image16->loadData(input);
+          image16->resizeImage(dim);
+          image16->saveToFile(cmd.output);
+        }
+        break;
+      default:
+        {
+          std::cerr << "Unsupported image bit type.\n";
+        }
         break;
     }
 

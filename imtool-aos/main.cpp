@@ -1,9 +1,15 @@
-#include <iostream>
-#include <stdexcept>
+#include "../common/misc.hpp"
 #include "../common/progargs.hpp"
 #include "../imgaos/imageaos.hpp"
 
+#include <iostream>
+#include <stdexcept>
+
+
+
 namespace {
+  constexpr int ocho = 8;
+  constexpr int diceciseis = 16;
   void printInfo(const std::string& inputFilename, const PPMMetadata& metadata) {
     std::cout << "Operación: info\n"
               << "Archivo de entrada: " << inputFilename << "\n"
@@ -16,8 +22,15 @@ namespace {
   void handleMaxLevel(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {
     const int maxLevel = std::stoi(arguments[4]);
     std::cout << "Operación: maxlevel\nNuevo valor: " << maxLevel << '\n';
-    scaleIntensity(pixels, metadata.maxColorValue, maxLevel);
-    saveImage(outputFilename, pixels, metadata);
+    if (numberInXbitRange(maxLevel) == ocho) {
+      scaleIntensity8bit(pixels, metadata.maxColorValue, maxLevel);
+    } else if (numberInXbitRange(maxLevel) == diceciseis) {
+      scaleIntensity16bit(pixels, metadata.maxColorValue, maxLevel);
+    } else {
+      throw std::invalid_argument("MaxLevel no valido");
+    }
+    const PPMMetadata newMetadata = {.magicNumber = metadata.magicNumber, .width = metadata.width, .height = metadata.height, .maxColorValue = maxLevel};
+    saveImage(outputFilename, pixels, newMetadata);
   }
 
   void handleResize(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {

@@ -8,9 +8,9 @@
 
 // Definición de la estructura Pixel
 struct Pixel {
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
+  uint16_t red;
+  uint16_t green;
+  uint16_t blue;
 
   bool operator<(const Pixel& other) const {
     return std::tie(red, green, blue) < std::tie(other.red, other.green, other.blue);
@@ -35,8 +35,8 @@ struct ImageMetadata {
 PPMMetadata getPPMMetadata(const std::string& filename);
 
 // Función para escalar la intensidad de cada píxel al nuevo valor máximo
-void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax);
-
+void scaleIntensity8bit(std::vector<Pixel>& pixels, int currentMax, int newMax);
+void scaleIntensity16bit(std::vector<Pixel>& pixels, int currentMax, int newMax);
 // Función para cargar una imagen PPM en un vector de píxeles
 std::vector<Pixel> loadImage(const std::string& filename, const PPMMetadata& metadata);
 

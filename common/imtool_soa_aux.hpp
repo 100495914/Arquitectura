@@ -20,5 +20,6 @@ struct Command {
 auto sanitizeArgs(std::vector<std::string> const & args)  -> std::optional<Command>;
 int checkProperArgumentNumber(int operation, size_t argv_size);
 void handleMaxLevel(Command const & cmd);
+void handleResize(Command const & cmd);
 
 #endif //IMTOOL_SOA_AUX_H
