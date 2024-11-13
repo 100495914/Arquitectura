@@ -15,29 +15,14 @@ constexpr uint16_t MAX_16BIT_VALUE = 65535;
 
 struct PPMMetadata {
     std::string magicNumber;
-    uint width;
-    uint height;
+    size_t width;
+    size_t height;
     uint maxColorValue;
 };
 
 struct Dimensions {
     size_t width;
     size_t height;
-};
-
-struct PixelPair8 {
-    uint8_t lower;
-    uint8_t upper;
-};
-
-struct PixelPair16 {
-    uint16_t lower;
-    uint16_t upper;
-};
-
-struct Weights {
-    float xWeight;
-    float yWeight;
 };
 
 class ImageSOA_8bit;
@@ -66,17 +51,17 @@ class ImageSOA {
     virtual void maxLevel(uint newMax) = 0;
 
     // Setters
-    void sWidth(unsigned int const newWidth) { width = newWidth; }
+    void sWidth(size_t const newWidth) { width = newWidth; }
 
-    void sHeight(unsigned int const newHeight) { height = newHeight; }
+    void sHeight(size_t const newHeight) { height = newHeight; }
 
     void sMaxColorValue(uint const newMaxColorValue) { maxColorValue = newMaxColorValue; }
 
     void sMagicNumber(std::string const & newMagicNumber) { magicNumber = newMagicNumber; }
 
-    [[nodiscard]] uint gWidth() const { return width; }
+    [[nodiscard]] size_t gWidth() const { return width; }
 
-    [[nodiscard]] uint gHeight() const { return height; }
+    [[nodiscard]] size_t gHeight() const { return height; }
 
     [[nodiscard]] uint gMaxColorValue() const { return maxColorValue; }
 
@@ -84,17 +69,16 @@ class ImageSOA {
 
   private:
     std::string magicNumber;
-    unsigned int width;
-    unsigned int height;
+    size_t width;
+    size_t height;
     uint maxColorValue;
 };
 
 class ImageSOA_8bit : public ImageSOA {
   public:
     explicit ImageSOA_8bit(PPMMetadata const & metadata)
-      : ImageSOA(metadata), red(static_cast<size_t>(gWidth() * gHeight())),
-        green(static_cast<size_t>(gWidth() * gHeight())),
-        blue(static_cast<size_t>(gWidth() * gHeight())) { }
+      : ImageSOA(metadata), red(gWidth() * gHeight()), green(gWidth() * gHeight()),
+        blue(gWidth() * gHeight()) { }
 
     void loadData(std::string const & filepath) override;
     void saveToFile(std::string const & filename) override;
@@ -107,11 +91,11 @@ class ImageSOA_8bit : public ImageSOA {
 
     void maxLevel(uint newMax) override;
     [[nodiscard]] std::unique_ptr<ImageSOA_16bit> maxLevelChangeChannelSize(uint newMax);
-    static uint8_t interpolate(PixelPair8 const & lowerPair, PixelPair8 const & upperPair,
-                        Weights const & weights);
-    std::vector<uint8_t> resizeChannel(Dimensions const & resizeData,
-                                       std::vector<uint8_t> const & originalChannel);
-    void resizeImage(Dimensions const & resizeData);
+    [[nodiscard]] uint8_t getInterpolatedPixel(double x_var, std::vector<uint8_t> const & channel,
+                                               double y_var) const;
+    void resizeChannel(std::vector<uint8_t> const & src, std::vector<uint8_t> & dst,
+                       Dimensions dim) const;
+    void resize(Dimensions dim);
 
   private:
     std::vector<uint8_t> red;
@@ -122,9 +106,8 @@ class ImageSOA_8bit : public ImageSOA {
 class ImageSOA_16bit : public ImageSOA {
   public:
     explicit ImageSOA_16bit(PPMMetadata const & metadata)
-      : ImageSOA(metadata), red(static_cast<size_t>(gWidth() * gHeight())),
-        green(static_cast<size_t>(gWidth() * gHeight())),
-        blue(static_cast<size_t>(gWidth() * gHeight())) { }
+      : ImageSOA(metadata), red(gWidth() * gHeight()), green(gWidth() * gHeight()),
+        blue(gWidth() * gHeight()) { }
 
     void loadData(std::string const & filepath) override;
     void saveToFileBE(std::string const & filename);
@@ -138,11 +121,11 @@ class ImageSOA_16bit : public ImageSOA {
 
     void maxLevel(uint newMax) override;
     [[nodiscard]] std::unique_ptr<ImageSOA_8bit> maxLevelChangeChannelSize(uint newMax);
-    static uint16_t interpolate(PixelPair16 const & lowerPair, PixelPair16 const & upperPair,
-                         Weights const & weights);
-    std::vector<uint16_t> resizeChannel(Dimensions const & resizeData,
-                                        std::vector<uint16_t> const & originalChannel);
-    void resizeImage(Dimensions const & resizeData);
+    [[nodiscard]] uint16_t getInterpolatedPixel(double x_var, std::vector<uint16_t> const & channel,
+                                                double y_var) const;
+    void resizeChannel(std::vector<uint16_t> const & src, std::vector<uint16_t> & dst,
+                       Dimensions dim) const;
+    void resize(Dimensions dim);
 
   private:
     std::vector<uint16_t> red;

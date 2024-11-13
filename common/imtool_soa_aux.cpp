@@ -153,7 +153,7 @@ void handleResize(Command const & cmd) {
         {
           auto const image8 = std::make_unique<ImageSOA_8bit>(metadata);
           image8->loadData(input);
-          image8->resizeImage(dim);
+          image8->resize(dim);
           image8->saveToFile(cmd.output);
           break;
         }
@@ -161,7 +161,7 @@ void handleResize(Command const & cmd) {
         {
           auto const image16 = std::make_unique<ImageSOA_16bit>(metadata);
           image16->loadData(input);
-          image16->resizeImage(dim);
+          image16->resize(dim);
           image16->saveToFile(cmd.output);
         }
         break;
