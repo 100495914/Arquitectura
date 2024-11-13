@@ -16,10 +16,18 @@ struct ProgramArgs {
 };
 
 // Función para procesar y validar los argumentos
-ProgramArgs processArgs(int argc, char* argv[]);
+ProgramArgs processArgs(const std::vector<std::string>& arguments);
 
 // Función para mostrar los mensajes de error
 void printUsage();
+
+// Funciones auxiliares para validar cada operación
+void validateMaxlevel(const std::vector<std::string>& args);
+void validateResize(const std::vector<std::string>& args);
+void validateCutfreq(const std::vector<std::string>& args);
+
+// Función auxiliar para validar la operación y número de argumentos
+void validateOperation(const std::string& operation, int argc);
 
 #endif // PROGARGS_HPP
 

@@ -42,6 +42,7 @@ class ImageSOA {
 
     virtual void loadData(std::ifstream & file)           = 0;
     virtual void saveToFile(std::string const & filename) = 0;
+    virtual void saveToFileBE(std::string const & filename) = 0;
 
     // Virtual functions to be implemented by derived classes
     virtual void scaleIntensity(uint newMax) = 0;
@@ -79,6 +80,7 @@ class ImageSOA_8bit : public ImageSOA {
         blue(static_cast<size_t>(gWidth() * gHeight())) { }
 
     void loadData(std::ifstream & file) override;
+    void saveToFileBE(std::string const & filename) override;
     void saveToFile(std::string const & filename) override;
 
     [[nodiscard]] std::vector<uint8_t> & gRed() { return red; }
@@ -105,6 +107,7 @@ class ImageSOA_16bit : public ImageSOA {
         blue(static_cast<size_t>(gWidth() * gHeight())) { }
 
     void loadData(std::ifstream & file) override;
+    void saveToFileBE(std::string const & filename) override;
     void saveToFile(std::string const & filename) override;
 
     [[nodiscard]] std::vector<uint16_t> & gRed() { return red; }

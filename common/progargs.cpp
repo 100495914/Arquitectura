@@ -1,50 +1,40 @@
-//
-// Created by diego on 20/10/24.
-//
-
 #include "progargs.hpp"
 #include <iostream>
 #include <stdexcept>
-#include <cstdlib>  // Para std::stoi
+#include <vector>
+#include <string>
 
-// Función auxiliar para validar la operación y número de argumentos
-void validateOperation(const std::string& operation, int argc);
-
-// Funciones auxiliares para validar cada operación
-void validateMaxlevel(const std::vector<std::string>& args);
-void validateResize(const std::vector<std::string>& args);
-void validateCutfreq(const std::vector<std::string>& args);
-
-ProgramArgs processArgs(int argc, char* argv[]) {
-    if (argc < 4) {
+ProgramArgs processArgs(const std::vector<std::string>& arguments) {
+    if (arguments.size() < 4) {
         printUsage();
         throw std::runtime_error("Error: Invalid number of arguments.");
     }
 
     ProgramArgs args;
-    args.inputFile = argv[1];
-    args.outputFile = argv[2];
-    args.operation = argv[3];
+    args.inputFile = arguments[1];
+    args.outputFile = arguments[2];
+    args.operation = arguments[3];
 
-    validateOperation(args.operation, argc);
+    validateOperation(args.operation, static_cast<int>(arguments.size()));
 
     // Validar parámetros adicionales según la operación
     if (args.operation == "maxlevel") {
-        args.extraParams.push_back(argv[4]);
+        args.extraParams.push_back(arguments[4]);
         validateMaxlevel(args.extraParams);
     } else if (args.operation == "resize") {
-        args.extraParams.push_back(argv[4]);
-        args.extraParams.push_back(argv[5]);
+        args.extraParams.push_back(arguments[4]);
+        constexpr int cinco =5;
+        args.extraParams.push_back(arguments[cinco]);
         validateResize(args.extraParams);
     } else if (args.operation == "cutfreq") {
-        args.extraParams.push_back(argv[4]);
+        args.extraParams.push_back(arguments[4]);
         validateCutfreq(args.extraParams);
     }
 
     return args;
 }
 
-void validateOperation(const std::string& operation, int argc) {
+void validateOperation(const std::string& operation, const int argc) {
     if (operation != "info" && operation != "maxlevel" &&
         operation != "resize" && operation != "cutfreq" &&
         operation != "compress") {
@@ -53,26 +43,28 @@ void validateOperation(const std::string& operation, int argc) {
 
     if ((operation == "info" || operation == "compress") && argc != 4) {
         throw std::runtime_error("Error: Invalid extra arguments for " + operation + ".");
-    } else if (operation == "maxlevel" && argc != 5) {
+    }
+    if (constexpr int cinco = 5; operation == "maxlevel" && argc != cinco) {
         throw std::runtime_error("Error: Invalid number of extra arguments for maxlevel.");
-    } else if (operation == "resize" && argc != 6) {
+    }
+    if (constexpr int seis = 6; operation == "resize" && argc != seis) {
         throw std::runtime_error("Error: Invalid number of extra arguments for resize.");
-    } else if (operation == "cutfreq" && argc != 5) {
+    }
+    if (constexpr int cinco = 5; operation == "cutfreq" && argc != cinco) {
         throw std::runtime_error("Error: Invalid number of extra arguments for cutfreq.");
     }
 }
 
 void validateMaxlevel(const std::vector<std::string>& args) {
-    int maxLevel = std::stoi(args[0]);
-    int constexpr maxlength = 65535;
-    if (maxLevel < 0 || maxLevel > maxlength) {
+    const int maxLevel = std::stoi(args[0]);
+    if (constexpr int maxlength = 65535;maxLevel < 0 || maxLevel > maxlength) {
         throw std::runtime_error("Error: Invalid maxlevel: " + std::to_string(maxLevel));
     }
 }
 
 void validateResize(const std::vector<std::string>& args) {
-    int newWidth = std::stoi(args[0]);
-    int newHeight = std::stoi(args[1]);
+    const int newWidth = std::stoi(args[0]);
+    const int newHeight = std::stoi(args[1]);
     if (newWidth <= 0) {
         throw std::runtime_error("Error: Invalid resize width: " + std::to_string(newWidth));
     }
@@ -82,9 +74,9 @@ void validateResize(const std::vector<std::string>& args) {
 }
 
 void validateCutfreq(const std::vector<std::string>& args) {
-    int n = std::stoi(args[0]);
-    if (n <= 0) {
-        throw std::runtime_error("Error: Invalid cutfreq: " + std::to_string(n));
+    const int numColorsToRemove = std::stoi(args[0]);
+    if (numColorsToRemove <= 0) {
+        throw std::runtime_error("Error: Invalid cutfreq: " + std::to_string(numColorsToRemove));
     }
 }
 
@@ -97,4 +89,3 @@ void printUsage() {
               << "  cutfreq <n>: Elimina los n colores menos frecuentes (n positivo).\n"
               << "  compress: Comprime la imagen al formato CPPM.\n";
 }
-

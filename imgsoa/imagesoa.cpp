@@ -94,6 +94,33 @@ void ImageSOA_8bit::saveToFile(std::string const & filename) {
   file.close();
 }
 
+void ImageSOA_8bit::saveToFileBE(std::string const & filename) {
+  std::ofstream file(filename, std::ios::out | std::ios::binary);
+
+  // Check if the file is opened successfully
+  if (!file.is_open()) { throw std::ios_base::failure("Failed to open file for saving."); }
+
+  // Write the PPM header for P6 format
+  file << "P6\n";
+  file << gWidth() << " " << gHeight() << "\n";
+  file << static_cast<int>(gMaxColorValue()) << "\n";
+  // Write pixel data (each pixel consists of 3 bytes: R, G, B)
+  size_t const size = static_cast<size_t>(gWidth()) * gHeight();
+  for (size_t i = 0; i < size; ++i) {
+    uint8_t red   = gRed()[i];
+    uint8_t green = gGreen()[i];
+    uint8_t blue  = gBlue()[i];
+    file.write(reinterpret_cast<char const *>(&red),  // NOLINT(*-pro-type-reinterpret-cast)
+               sizeof(red));
+    file.write(reinterpret_cast<char const *>(&green),  // NOLINT(*-pro-type-reinterpret-cast)
+               sizeof(green));
+    file.write(reinterpret_cast<char const *>(&blue),  // NOLINT(*-pro-type-reinterpret-cast)
+               sizeof(blue));
+  }
+
+  file.close();
+}
+
 // Scale intensity for each channel (for 8-bit values)
 void ImageSOA_8bit::scaleIntensity(uint const newMax) {
   if (newMax > MAX_8BIT_VALUE) {
@@ -192,6 +219,43 @@ void ImageSOA_16bit::loadData(std::ifstream & file) {
 }
 
 void ImageSOA_16bit::saveToFile(std::string const & filename) {
+  std::ofstream file(filename, std::ios::out | std::ios::binary);
+
+  // Check if the file is opened successfully
+  if (!file.is_open()) { throw std::ios_base::failure("Failed to open file for saving."); }
+
+  // Write the PPM header for P6 format
+  file << "P6\n";
+  file << gWidth() << " " << gHeight() << "\n";
+  file << static_cast<int>(gMaxColorValue()) << "\n";
+
+  // Write pixel data (each pixel consists of 6 bytes: R, G, B, each 2 bytes)
+  uint16_t const hex_ff      = 0xFF;
+  uint16_t const shift_value = 8;
+  size_t const size          = static_cast<size_t>(gWidth()) * gHeight();
+  for (size_t i = 0; i < size; ++i) {
+    uint16_t const red   = gRed()[i];
+    uint16_t const green = gGreen()[i];
+    uint16_t const blue  = gBlue()[i];
+
+    // Use std::array instead of C-style array
+    std::array<char, 2> redBytes   = {static_cast<char>(red & hex_ff),
+                                      static_cast<char>((red >> shift_value) & hex_ff)};
+    std::array<char, 2> greenBytes = {static_cast<char>(green & hex_ff),
+                                      static_cast<char>((green >> shift_value) & hex_ff)};
+    std::array<char, 2> blueBytes  = {static_cast<char>(blue & hex_ff),
+                                      static_cast<char>((blue >> shift_value) & hex_ff)};
+
+    // Write the bytes to the file
+    file.write(redBytes.data(), 2);
+    file.write(greenBytes.data(), 2);
+    file.write(blueBytes.data(), 2);
+  }
+
+  file.close();
+}
+
+void ImageSOA_16bit::saveToFileBE(std::string const & filename) {
   std::ofstream file(filename, std::ios::out | std::ios::binary);
 
   // Check if the file is opened successfully

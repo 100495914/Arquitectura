@@ -7,119 +7,149 @@
 #include <algorithm>
 #include <set>
 
+void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax) {
+    for (auto& pixel : pixels) {
+        pixel.red = static_cast<uint8_t>(std::round(pixel.red * newMax / static_cast<double>(currentMax)));
+        pixel.green = static_cast<uint8_t>(std::round(pixel.green * newMax / static_cast<double>(currentMax)));
+        pixel.blue = static_cast<uint8_t>(std::round(pixel.blue * newMax / static_cast<double>(currentMax)));
+    }
+}
+
 // Implementación de la función interpolate
-Pixel interpolate(const Pixel& p1, const Pixel& p2, float weight) {
-    Pixel result;
-    result.red = static_cast<uint8_t>(std::round(static_cast<float>(p1.red) + weight * (static_cast<float>(p2.red) - static_cast<float>(p1.red))));
-    result.green = static_cast<uint8_t>(std::round(static_cast<float>(p1.green) + weight * (static_cast<float>(p2.green) - static_cast<float>(p1.green))));
-    result.blue = static_cast<uint8_t>(std::round(static_cast<float>(p1.blue) + weight * (static_cast<float>(p2.blue) - static_cast<float>(p1.blue))));
+Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, float weight) {
+    Pixel result = {.red = 0, .green = 0, .blue = 0};
+    result.red = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.red) + (weight * (static_cast<float>(pixel2.red) - static_cast<float>(pixel1.red)))));
+    result.green = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.green) + (weight * (static_cast<float>(pixel2.green) - static_cast<float>(pixel1.green)))));
+    result.blue = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.blue) + (weight * (static_cast<float>(pixel2.blue) - static_cast<float>(pixel1.blue)))));
     return result;
 }
 
 // Implementación de la función para redimensionar la imagen
-std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, int originalWidth, int originalHeight, int newWidth, int newHeight) {
+std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, const PPMMetadata& originalMetadata, int newWidth, int newHeight) {
     std::vector<Pixel> resizedPixels(static_cast<std::vector<Pixel>::size_type>(newWidth) * static_cast<std::vector<Pixel>::size_type>(newHeight));
-
     for (int yPrime = 0; yPrime < newHeight; ++yPrime) {
         for (int xPrime = 0; xPrime < newWidth; ++xPrime) {
-            float x = (static_cast<float>(xPrime) * static_cast<float>(originalWidth)) / static_cast<float>(newWidth);
-            float y = (static_cast<float>(yPrime) * static_cast<float>(originalHeight)) / static_cast<float>(newHeight);
+            const float normalizedX = (static_cast<float>(xPrime) * static_cast<float>(originalMetadata.width)) / static_cast<float>(newWidth);
+            const float normalizedY = (static_cast<float>(yPrime) * static_cast<float>(originalMetadata.height)) / static_cast<float>(newHeight);
 
-            int xl = static_cast<int>(std::floor(x));
-            int xh = static_cast<int>(std::ceil(x));
-            int yl = static_cast<int>(std::floor(y));
-            int yh = static_cast<int>(std::ceil(y));
+            const int lowerX = static_cast<int>(std::floor(normalizedX));
+            int upperX = static_cast<int>(std::ceil(normalizedX));
+            const int lowerY = static_cast<int>(std::floor(normalizedY));
+            int upperY = static_cast<int>(std::ceil(normalizedY));
 
-            if (xh >= originalWidth) xh = originalWidth - 1;
-            if (yh >= originalHeight) yh = originalHeight - 1;
+            if (upperX >= originalMetadata.width) {
+                upperX = originalMetadata.width - 1;
+            }
+            if (upperY >= originalMetadata.height) {
+                upperY = originalMetadata.height - 1;
+            }
 
-            Pixel p1 = originalPixels[static_cast<std::vector<Pixel>::size_type>(yl) * static_cast<std::vector<Pixel>::size_type>(originalWidth) + static_cast<std::vector<Pixel>::size_type>(xl)];
-            Pixel p2 = originalPixels[static_cast<std::vector<Pixel>::size_type>(yl) * static_cast<std::vector<Pixel>::size_type>(originalWidth) + static_cast<std::vector<Pixel>::size_type>(xh)];
-            Pixel p3 = originalPixels[static_cast<std::vector<Pixel>::size_type>(yh) * static_cast<std::vector<Pixel>::size_type>(originalWidth) + static_cast<std::vector<Pixel>::size_type>(xl)];
-            Pixel p4 = originalPixels[static_cast<std::vector<Pixel>::size_type>(yh) * static_cast<std::vector<Pixel>::size_type>(originalWidth) + static_cast<std::vector<Pixel>::size_type>(xh)];
+            const Pixel pixel1 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(lowerY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(lowerX)];
+            const Pixel pixel2 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(lowerY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(upperX)];
+            const Pixel pixel3 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(upperY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(lowerX)];
+            const Pixel pixel4 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(upperY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(upperX)];
 
-            float xWeight = x - static_cast<float>(xl);
-            float yWeight = y - static_cast<float>(yl);
+            const float xWeight = normalizedX - static_cast<float>(lowerX);
+            const float yWeight = normalizedY - static_cast<float>(lowerY);
 
-            Pixel c1 = interpolate(p1, p2, xWeight);
-            Pixel c2 = interpolate(p3, p4, xWeight);
-            Pixel finalColor = interpolate(c1, c2, yWeight);
+            const Pixel color1 = interpolate(pixel1, pixel2, xWeight);
+            const Pixel color2 = interpolate(pixel3, pixel4, xWeight);
+            const Pixel finalColor = interpolate(color1, color2, yWeight);
 
-            resizedPixels[static_cast<std::vector<Pixel>::size_type>(yPrime) * static_cast<std::vector<Pixel>::size_type>(newWidth) + static_cast<std::vector<Pixel>::size_type>(xPrime)] = finalColor;
+            resizedPixels[(static_cast<std::vector<Pixel>::size_type>(yPrime) * static_cast<std::vector<Pixel>::size_type>(newWidth)) + static_cast<std::vector<Pixel>::size_type>(xPrime)] = finalColor;
         }
     }
-
     return resizedPixels;
 }
 
+
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
 // Implementación de la función para guardar la imagen
-void saveImage(const std::string& filename, const std::vector<Pixel>& pixels, int width, int height, int maxColorValue) {
-    std::ofstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Unable to open file: " + filename);
+// Implementación de la función para guardar la imagen
+void saveImage(const std::string& filename, const std::vector<Pixel>& pixels, const PPMMetadata& metadata) {
+  std::ofstream file(filename, std::ios::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error("Unable to open file: " + filename);
+  }
+
+  file << "P6\n" << metadata.width << " " << metadata.height << "\n" << metadata.maxColorValue << "\n";
+  constexpr int maxValue = 256;
+  const int bytesPerChannel = (metadata.maxColorValue < maxValue) ? 1 : 2;
+
+  for (const auto& pixel : pixels) {
+    if (bytesPerChannel == 1) {
+      auto red = static_cast<unsigned char>(pixel.red);
+      auto green = static_cast<unsigned char>(pixel.green);
+      auto blue = static_cast<unsigned char>(pixel.blue);
+
+      file.write(reinterpret_cast<char*>(&red), 1);
+      file.write(reinterpret_cast<char*>(&green), 1);
+      file.write(reinterpret_cast<char*>(&blue), 1);
+    } else {
+      auto red = static_cast<unsigned short>(pixel.red);
+      auto green = static_cast<unsigned short>(pixel.green);
+      auto blue = static_cast<unsigned short>(pixel.blue);
+
+      file.write(reinterpret_cast<char*>(&red), 2);
+      file.write(reinterpret_cast<char*>(&green), 2);
+      file.write(reinterpret_cast<char*>(&blue), 2);
     }
+  }
 
-    file << "P6\n" << width << " " << height << "\n" << maxColorValue << "\n";
-    int bytesPerChannel = (maxColorValue < 256) ? 1 : 2;
-
-    for (const auto& pixel : pixels) {
-        if (bytesPerChannel == 1) {
-            unsigned char r = static_cast<unsigned char>(pixel.red);
-            unsigned char g = static_cast<unsigned char>(pixel.green);
-            unsigned char b = static_cast<unsigned char>(pixel.blue);
-            file.write(reinterpret_cast<char*>(&r), 1);
-            file.write(reinterpret_cast<char*>(&g), 1);
-            file.write(reinterpret_cast<char*>(&b), 1);
-        } else {
-            unsigned short r = static_cast<unsigned short>(pixel.red);
-            unsigned short g = static_cast<unsigned short>(pixel.green);
-            unsigned short b = static_cast<unsigned short>(pixel.blue);
-            file.write(reinterpret_cast<char*>(&r), 2);
-            file.write(reinterpret_cast<char*>(&g), 2);
-            file.write(reinterpret_cast<char*>(&b), 2);
-        }
-    }
-
-    file.close();
+  file.close();
 }
+
+
+
 
 // Implementación de la función para cargar la imagen
-std::vector<Pixel> loadImage(const std::string& filename, int width, int height, int maxColorValue) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Unable to open file: " + filename);
+// Implementación de la función para cargar la imagen
+std::vector<Pixel> loadImage(const std::string& filename, const PPMMetadata& metadata) {
+  std::ifstream file(filename, std::ios::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error("Unable to open file: " + filename);
+  }
+
+  std::string magicNumber;
+  file >> magicNumber;
+  file.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignora la línea completa después del magicNumber
+
+  std::vector<Pixel> pixels(static_cast<std::vector<Pixel>::size_type>(metadata.width) * static_cast<std::vector<Pixel>::size_type>(metadata.height));
+
+  constexpr int maxValue = 256;
+  const int bytesPerChannel = (metadata.maxColorValue < maxValue) ? 1 : 2;
+
+  for (auto& pixel : pixels) {
+    if (bytesPerChannel == 1) {
+      unsigned char red = 0;
+      unsigned char green = 0;
+      unsigned char blue = 0;
+      file.read(reinterpret_cast<char*>(&red), 1);
+      file.read(reinterpret_cast<char*>(&green), 1);
+      file.read(reinterpret_cast<char*>(&blue), 1);
+      pixel.red = red;
+      pixel.green = green;
+      pixel.blue = blue;
+    } else {
+      unsigned short red = 0;
+      unsigned short green = 0;
+      unsigned short blue = 0;
+      file.read(reinterpret_cast<char*>(&red), 2);
+      file.read(reinterpret_cast<char*>(&green), 2);
+      file.read(reinterpret_cast<char*>(&blue), 2);
+      pixel.red = static_cast<uint8_t>(red);
+      pixel.green = static_cast<uint8_t>(green);
+      pixel.blue = static_cast<uint8_t>(blue);
     }
-
-    std::string magicNumber;
-    file >> magicNumber;
-    file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-    std::vector<Pixel> pixels(static_cast<std::vector<Pixel>::size_type>(width) * static_cast<std::vector<Pixel>::size_type>(height));
-    int bytesPerChannel = (maxColorValue < 256) ? 1 : 2;
-
-    for (auto& pixel : pixels) {
-        if (bytesPerChannel == 1) {
-            unsigned char r, g, b;
-            file.read(reinterpret_cast<char*>(&r), 1);
-            file.read(reinterpret_cast<char*>(&g), 1);
-            file.read(reinterpret_cast<char*>(&b), 1);
-            pixel.red = r;
-            pixel.green = g;
-            pixel.blue = b;
-        } else {
-            unsigned short r, g, b;
-            file.read(reinterpret_cast<char*>(&r), 2);
-            file.read(reinterpret_cast<char*>(&g), 2);
-            file.read(reinterpret_cast<char*>(&b), 2);
-            pixel.red = static_cast<uint8_t>(r); // Conversión segura
-            pixel.green = static_cast<uint8_t>(g); // Conversión segura
-            pixel.blue = static_cast<uint8_t>(b); // Conversión segura
-        }
-    }
-
-    file.close();
-    return pixels;
+  }
+  file.close();
+  return pixels;
 }
+
+
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+
 
 // Función para obtener metadatos de PPM
 PPMMetadata getPPMMetadata(const std::string& filename) {
@@ -138,50 +168,43 @@ PPMMetadata getPPMMetadata(const std::string& filename) {
 }
 
 // Función para calcular la distancia entre colores
-float colorDistance(const Pixel& a, const Pixel& b) {
+float colorDistance(const Pixel& pixel1, const Pixel& pixel2) {
     return std::sqrt(
-        static_cast<float>(std::pow(a.red - b.red, 2)) +
-        static_cast<float>(std::pow(a.green - b.green, 2)) +
-        static_cast<float>(std::pow(a.blue - b.blue, 2))
+        static_cast<float>(std::pow(pixel1.red - pixel2.red, 2)) +
+        static_cast<float>(std::pow(pixel1.green - pixel2.green, 2)) +
+        static_cast<float>(std::pow(pixel1.blue - pixel2.blue, 2))
     );
 }
 
 // Función para eliminar colores menos frecuentes
 std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, int n) {
-    // Asegurarse de que n no sea negativo
-    if (n < 0) {
-        throw std::invalid_argument("El número de colores a eliminar no puede ser negativo.");
-    }
+    if (n < 0) { throw std::invalid_argument("El número de colores a eliminar no puede ser negativo.");}
 
-    std::map<Pixel, int, bool(*)(const Pixel&, const Pixel&)> colorFrequency([](const Pixel& a, const Pixel& b) {
-        return std::tie(a.red, a.green, a.blue) < std::tie(b.red, b.green, b.blue);
+    std::map<Pixel, int, bool(*)(const Pixel&, const Pixel&)> colorFrequency([](const Pixel& pixela, const Pixel& pixelb) {
+        return std::tie(pixela.red, pixela.green, pixela.blue) < std::tie(pixelb.red, pixelb.green, pixelb.blue);
     });
 
-    for (const auto& pixel : pixels) {
-        colorFrequency[pixel]++;
-    }
+    for (const auto& pixel : pixels) { colorFrequency[pixel]++;}
 
     std::vector<std::pair<Pixel, int>> colorFreqVec(colorFrequency.begin(), colorFrequency.end());
-    std::sort(colorFreqVec.begin(), colorFreqVec.end(), [](const auto& a, const auto& b) {
-        return a.second < b.second ||
-               (a.second == b.second && (a.first.blue > b.first.blue ||
-               (a.first.blue == b.first.blue && (a.first.green > b.first.green ||
-               (a.first.green == b.first.green && a.first.red > b.first.red)))));
+    std::ranges::sort(colorFreqVec, [](const auto& colorFreqa, const auto& colorFreqb) {
+        return colorFreqa.second < colorFreqb.second ||
+               (colorFreqa.second == colorFreqb.second && (colorFreqa.first.blue > colorFreqb.first.blue ||
+               (colorFreqa.first.blue == colorFreqb.first.blue && (colorFreqa.first.green > colorFreqb.first.green ||
+               (colorFreqa.first.green == colorFreqb.first.green && colorFreqa.first.red > colorFreqb.first.red)))));
     });
-
     std::set<Pixel> colorsToKeep;
     for (auto i = static_cast<size_t>(n); i < colorFreqVec.size(); ++i) { // Conversión segura
         colorsToKeep.insert(colorFreqVec[i].first);
     }
-
     std::map<Pixel, Pixel> colorReplacement;
     for (size_t i = 0; i < static_cast<size_t>(n) && i < colorFreqVec.size(); ++i) { // Conversión segura
-        Pixel colorToRemove = colorFreqVec[i].first;
+        const Pixel colorToRemove = colorFreqVec[i].first;
         float minDistance = std::numeric_limits<float>::max();
-        Pixel closestColor;
+        Pixel closestColor = {.red = 0, .green = 0, .blue = 0};
 
         for (const auto& color : colorsToKeep) {
-            float distance = colorDistance(colorToRemove, color);
+            const float distance = colorDistance(colorToRemove, color);
             if (distance < minDistance) {
                 minDistance = distance;
                 closestColor = color;
@@ -189,13 +212,9 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
         }
         colorReplacement[colorToRemove] = closestColor;
     }
-
     std::vector<Pixel> modifiedPixels = pixels;
     for (auto& pixel : modifiedPixels) {
-        if (colorReplacement.count(pixel) > 0) {
-            pixel = colorReplacement[pixel];
-        }
+      if (colorReplacement.contains(pixel)) { pixel = colorReplacement[pixel]; }
     }
-
     return modifiedPixels;
 }

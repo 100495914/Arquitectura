@@ -25,6 +25,12 @@ struct PPMMetadata {
   int maxColorValue = 0;
 };
 
+struct ImageMetadata {
+  int width = 0;
+  int height = 0;
+  int maxColorValue = 0;
+};
+
 // Función que obtiene los metadatos de un archivo PPM
 PPMMetadata getPPMMetadata(const std::string& filename);
 
@@ -32,15 +38,21 @@ PPMMetadata getPPMMetadata(const std::string& filename);
 void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax);
 
 // Función para cargar una imagen PPM en un vector de píxeles
-std::vector<Pixel> loadImage(const std::string& filename, int width, int height, int maxColorValue);
+std::vector<Pixel> loadImage(const std::string& filename, const PPMMetadata& metadata);
 
 // Función para guardar un vector de píxeles en un archivo PPM
-void saveImage(const std::string& filename, const std::vector<Pixel>& pixels, int width, int height, int maxColorValue);
+void saveImage(const std::string& filename, const std::vector<Pixel>& pixels, const PPMMetadata& metadata);
 
 // Función para redimensionar una imagen utilizando interpolación bilineal
-std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, int originalWidth, int originalHeight, int newWidth, int newHeight);
+std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, const PPMMetadata& originalMetadata, int newWidth, int newHeight);
 
 // Función para eliminar colores menos frecuentes de la imagen
 std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, int n);
 
-#endif // IMAGEAOS_HPP
+// Función para calcular la distancia entre colores
+float colorDistance(const Pixel& pixel1, const Pixel& pixel2);
+
+// Función interpolate
+Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, float weight);
+
+#endif

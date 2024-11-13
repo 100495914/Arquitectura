@@ -9,9 +9,11 @@
 
 struct PPMMetadata {
   std::string magicNumber;
-  int width;
-  int height;
-  int maxColorValue;
+  int width = 0;
+  int height = 0;
+  int maxColorValue = 0;
 };
+
+PPMMetadata getPPMMetadata(const std::string& filename);
 
 #endif // PPM_METADATA_HPP

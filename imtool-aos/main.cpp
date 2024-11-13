@@ -1,57 +1,82 @@
 #include <iostream>
 #include <stdexcept>
+#include "../common/progargs.hpp"
 #include "../imgaos/imageaos.hpp"
 
-void printUsage() {
-    std::cout << "Uso: ./imtool-aos <input.ppm> <output.ppm> <operation> [params...]\n";
-    std::cout << "Operaciones disponibles:\n";
-    std::cout << "  resize <newWidth> <newHeight>\n";
-    std::cout << "  cutfreq <n>\n";  // Operación actualizada
+namespace {
+  void printInfo(const std::string& inputFilename, const PPMMetadata& metadata) {
+    std::cout << "Operación: info\n"
+              << "Archivo de entrada: " << inputFilename << "\n"
+              << "Número mágico: " << metadata.magicNumber << "\n"
+              << "Ancho: " << metadata.width << "\n"
+              << "Alto: " << metadata.height << "\n"
+              << "Valor máximo de color: " << metadata.maxColorValue << '\n';
+  }
+
+  void handleMaxLevel(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {
+    const int maxLevel = std::stoi(arguments[4]);
+    std::cout << "Operación: maxlevel\nNuevo valor: " << maxLevel << '\n';
+    scaleIntensity(pixels, metadata.maxColorValue, maxLevel);
+    saveImage(outputFilename, pixels, metadata);
+  }
+
+  void handleResize(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {
+    const int newWidth = std::stoi(arguments[4]);
+    const int newHeight = std::stoi(arguments[5]);
+    std::cout << "Operación: resize\nAncho nuevo: " << newWidth
+              << "\nAlto nuevo: " << newHeight << '\n';
+    pixels = resizeImage(pixels, metadata, newWidth, newHeight);
+    saveImage(outputFilename, pixels, metadata);
+  }
+
+  void handleCutFreq(std::vector<Pixel>& pixels, const std::vector<std::string>& arguments, const PPMMetadata& metadata, const std::string& outputFilename) {
+    const int numColorsToRemove = std::stoi(arguments[4]);
+    std::cout << "Operación: cutfreq\nColores a eliminar: " << numColorsToRemove << '\n';
+    pixels = removeLeastFrequentColors(pixels, numColorsToRemove);
+    saveImage(outputFilename, pixels, metadata);
+  }
+
+  void handleCompress(const std::vector<Pixel>& pixels, const std::string& outputFilename, const PPMMetadata& metadata) {
+    std::cout << "Operación: compress\n";
+    saveImage(outputFilename, pixels, metadata);
+  }
 }
 
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
     if (argc < 4) {
         printUsage();
         return 1;
     }
-
-    std::string inputFilename = argv[1];
-    std::string outputFilename = argv[2];
-    std::string operation = argv[3];
+    // Convertir los parámetros de argv a std::vector<std::string>
+    const std::vector<std::string> arguments(argv, argv + argc);
+    const std::string& inputFilename = arguments[1];
+    const std::string& outputFilename = arguments[2];
+    const std::string& operation = arguments[3];
 
     try {
-        PPMMetadata metadata = getPPMMetadata(inputFilename);
-        std::vector<Pixel> pixels = loadImage(inputFilename, metadata.width, metadata.height, metadata.maxColorValue);
+        const PPMMetadata metadata = getPPMMetadata(inputFilename);
+        std::vector<Pixel> pixels = loadImage(inputFilename, metadata);
 
-        if (operation == "resize") {
-            if (argc != 6) {
-                printUsage();
-                return 1;
-            }
-            int newWidth = std::stoi(argv[4]);
-            int newHeight = std::stoi(argv[5]);
-            pixels = resizeImage(pixels, metadata.width, metadata.height, newWidth, newHeight);
-            saveImage(outputFilename, pixels, newWidth, newHeight, metadata.maxColorValue);
+        if (operation == "info") {
+            printInfo(inputFilename, metadata);
+        } else if (operation == "maxlevel") {
+            if (constexpr int cinco = 5; argc != cinco) {printUsage();}
+            handleMaxLevel(pixels, arguments, metadata, outputFilename);
+        } else if (operation == "resize") {
+            if (constexpr int seis = 6; argc != seis) {printUsage();}
+            handleResize(pixels, arguments, metadata, outputFilename);
         } else if (operation == "cutfreq") {
-            if (argc != 5) {
-                std::cerr << "Error: Invalid number of extra arguments for cutfreq: " << argc - 4 << std::endl;
-                return -1;
-            }
-            int n = std::stoi(argv[4]);
-            if (n <= 0) {
-                std::cerr << "Error: Invalid cutfreq: " << n << std::endl;
-                return -1;
-            }
-            pixels = removeLeastFrequentColors(pixels, n); // Implementar la lógica de cutfreq
-            saveImage(outputFilename, pixels, metadata.width, metadata.height, metadata.maxColorValue);
+            if (constexpr int cinco = 5; argc != cinco) {printUsage();}
+            handleCutFreq(pixels, arguments, metadata, outputFilename);
+        } else if (operation == "compress") {
+            handleCompress(pixels, outputFilename, metadata);
         } else {
             printUsage();
             return 1;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << "\n";
         return 1;
     }
-
     return 0;
 }
