@@ -3,6 +3,7 @@
 //
 #include "imagesoa.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -10,7 +11,9 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <stdexcept>
+#include <unordered_map>
 
 PPMMetadata loadMetadata(std::string const & filepath) {
   std::cerr << "Trying to open: " << filepath << '\n';
@@ -390,7 +393,7 @@ uint16_t ImageSOA_16bit::getInterpolatedPixel(double const x_var,
   uint16_t const p_4 = channel[(y_two * gWidth()) + x_two];
 
   return static_cast<uint16_t>(((1 - f_x) * (1 - f_y) * p_1) + (f_x * (1 - f_y) * p_2) +
-                              ((1 - f_x) * f_y * p_3) + (f_x * f_y * p_4));
+                               ((1 - f_x) * f_y * p_3) + (f_x * f_y * p_4));
 }
 
 void ImageSOA_16bit::resizeChannel(std::vector<uint16_t> const & src, std::vector<uint16_t> & dst,
@@ -428,4 +431,182 @@ void ImageSOA_16bit::resize(Dimensions const dim) {
   // Update dimensions
   sWidth(dim.width);
   sHeight(dim.height);
+}
+
+void ImageSOA_8bit::reduceColors(size_t n) {
+  auto frequencies = computeColorFrequencies();
+  if (n >= frequencies.size()) { return; }
+
+  auto colorsToRemove = findLeastFrequentColors(frequencies, n);
+  std::unordered_set<RGB8> validColors;
+  for (auto const & [color, freq] : frequencies) { validColors.insert(color); }
+  for (auto const & color : colorsToRemove) { validColors.erase(color); }
+
+  std::unordered_map<RGB8, RGB8> replacementMap;
+  for (auto const & color : colorsToRemove) {
+    replacementMap[color] = findNearestColor(color, validColors);
+  }
+
+  replaceColors(replacementMap);
+}
+
+std::unordered_map<RGB8, size_t> ImageSOA_8bit::computeColorFrequencies() const {
+  std::unordered_map<RGB8, size_t> frequencies;
+  size_t const size = gWidth() * gHeight();
+
+  for (size_t i = 0; i < size; ++i) {
+    RGB8 const color{.r = red[i], .g = green[i], .b = blue[i]};
+    frequencies[color]++;
+  }
+  return frequencies;
+}
+
+std::vector<RGB8>
+    ImageSOA_8bit::findLeastFrequentColors(std::unordered_map<RGB8, size_t> const & freqs,
+                                           size_t const n) {
+  auto comp = [](std::pair<RGB8, size_t> const & var_a, std::pair<RGB8, size_t> const & var_b) {
+    if (var_a.second != var_b.second) { return var_a.second < var_b.second; }  // Change > to <
+    if (var_a.first.b != var_b.first.b) { return var_a.first.b < var_b.first.b; }
+    if (var_a.first.g != var_b.first.g) { return var_a.first.g < var_b.first.g; }
+    return var_a.first.r < var_b.first.r;
+  };
+
+  std::priority_queue<std::pair<RGB8, size_t>, std::vector<std::pair<RGB8, size_t>>, decltype(comp)>
+      priority_queue(comp);
+
+  for (auto const & [color, freq] : freqs) {
+    priority_queue.emplace(color, freq);
+    if (priority_queue.size() > n) { priority_queue.pop(); }
+  }
+
+  std::vector<RGB8> result;
+  while (!priority_queue.empty()) {
+    result.push_back(priority_queue.top().first);
+    priority_queue.pop();
+  }
+  return result;
+}
+
+double ImageSOA_8bit::colorDistance(const RGB8 & var_c1, const RGB8 & var_c2) {
+  double const var_dr = var_c1.r - var_c2.r;
+  double const var_dg = var_c1.g - var_c2.g;
+  double const var_db = var_c1.b - var_c2.b;
+  return (var_dr * var_dr) + (var_dg * var_dg) + (var_db * var_db);
+}
+
+RGB8 ImageSOA_8bit::findNearestColor(const RGB8 & target,
+                                     std::unordered_set<RGB8> const & validColors) {
+  RGB8 nearest   = *validColors.begin();
+  double minDist = colorDistance(target, nearest);
+
+  for (auto const & color : validColors) {
+    double const dist = colorDistance(target, color);
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = color;
+    }
+  }
+  return nearest;
+}
+
+void ImageSOA_8bit::replaceColors(std::unordered_map<RGB8, RGB8> const & colorMap) {
+  size_t const size = gWidth() * gHeight();
+  for (size_t i = 0; i < size; ++i) {
+    RGB8 const color{.r = red[i], .g = green[i], .b = blue[i]};
+    if (auto found_color = colorMap.find(color); found_color != colorMap.end()) {
+      red[i]   = found_color->second.r;
+      green[i] = found_color->second.g;
+      blue[i]  = found_color->second.b;
+    }
+  }
+}
+
+// 16-bit implementations follow the same pattern
+void ImageSOA_16bit::reduceColors(size_t n) {
+  auto frequencies = computeColorFrequencies();
+  if (n >= frequencies.size()) { return; }
+
+  auto colorsToRemove = findLeastFrequentColors(frequencies, n);
+  std::unordered_set<RGB16> validColors;
+  for (auto const & [color, freq] : frequencies) { validColors.insert(color); }
+  for (auto const & color : colorsToRemove) { validColors.erase(color); }
+
+  std::unordered_map<RGB16, RGB16> replacementMap;
+  for (auto const & color : colorsToRemove) {
+    replacementMap[color] = findNearestColor(color, validColors);
+  }
+
+  replaceColors(replacementMap);
+}
+
+std::unordered_map<RGB16, size_t> ImageSOA_16bit::computeColorFrequencies() const {
+  std::unordered_map<RGB16, size_t> frequencies;
+  size_t const size = gWidth() * gHeight();
+
+  for (size_t i = 0; i < size; ++i) {
+    RGB16 const color{.r = red[i], .g = green[i], .b = blue[i]};
+    frequencies[color]++;
+  }
+  return frequencies;
+}
+
+std::vector<RGB16>
+    ImageSOA_16bit::findLeastFrequentColors(std::unordered_map<RGB16, size_t> const & freqs,
+                                            size_t const n) {
+  auto comp = [](std::pair<RGB16, size_t> const & var_a, std::pair<RGB16, size_t> const & var_b) {
+    if (var_a.second != var_b.second) { return var_a.second < var_b.second; }  // Change > to <
+    if (var_a.first.b != var_b.first.b) { return var_a.first.b < var_b.first.b; }
+    if (var_a.first.g != var_b.first.g) { return var_a.first.g < var_b.first.g; }
+    return var_a.first.r < var_b.first.r;
+  };
+
+  std::priority_queue<std::pair<RGB16, size_t>, std::vector<std::pair<RGB16, size_t>>,
+                      decltype(comp)>
+      priority_queue(comp);
+
+  for (auto const & [color, freq] : freqs) {
+    priority_queue.emplace(color, freq);
+    if (priority_queue.size() > n) { priority_queue.pop(); }
+  }
+
+  std::vector<RGB16> result;
+  while (!priority_queue.empty()) {
+    result.push_back(priority_queue.top().first);
+    priority_queue.pop();
+  }
+  return result;
+}
+
+double ImageSOA_16bit::colorDistance(const RGB16 & var_c1, const RGB16 & var_c2) {
+  double const var_dr = var_c1.r - var_c2.r;
+  double const var_dg = var_c1.g - var_c2.g;
+  double const var_db = var_c1.b - var_c2.b;
+  return (var_dr * var_dr) + (var_dg * var_dg) + (var_db * var_db);
+}
+
+RGB16 ImageSOA_16bit::findNearestColor(const RGB16 & target,
+                                       std::unordered_set<RGB16> const & validColors) {
+  RGB16 nearest  = *validColors.begin();
+  double minDist = colorDistance(target, nearest);
+
+  for (auto const & color : validColors) {
+    if (double const dist = colorDistance(target, color); dist < minDist) {
+      minDist = dist;
+      nearest = color;
+    }
+  }
+  return nearest;
+}
+
+void ImageSOA_16bit::replaceColors(std::unordered_map<RGB16, RGB16> const & colorMap) {
+  size_t const size = gWidth() * gHeight();
+  for (size_t i = 0; i < size; ++i) {
+    RGB16 const color{.r = red[i], .g = green[i], .b = blue[i]};
+    auto found_color = colorMap.find(color);
+    if (found_color != colorMap.end()) {
+      red[i]   = found_color->second.r;
+      green[i] = found_color->second.g;
+      blue[i]  = found_color->second.b;
+    }
+  }
 }

@@ -174,3 +174,36 @@ void handleResize(Command const & cmd) {
 
   } catch (std::exception const & e) { std::cerr << "Error: " << e.what() << '\n'; }
 }
+
+void handleCutfreq(Command const & cmd) {
+  try {
+    std::string const input    = cmd.input;
+    PPMMetadata const metadata = loadMetadata(input);
+    if (cmd.op1 < 0) { throw std::invalid_argument("n debe ser positivo"); }
+
+    switch (numberInXbitRange(metadata.maxColorValue)) {
+      case ocho:
+        {
+          auto const image8 = std::make_unique<ImageSOA_8bit>(metadata);
+          image8->loadData(input);
+          image8->reduceColors(static_cast<size_t>(cmd.op1));
+          image8->saveToFile(cmd.output);
+          break;
+        }
+      case dieciseis:
+        {
+          auto const image16 = std::make_unique<ImageSOA_16bit>(metadata);
+          image16->loadData(input);
+          image16->reduceColors(static_cast<size_t>(cmd.op1));
+          image16->saveToFile(cmd.output);
+        }
+        break;
+      default:
+        {
+          std::cerr << "Unsupported image bit type.\n";
+        }
+        break;
+    }
+
+  } catch (std::exception const & e) { std::cerr << "Error: " << e.what() << '\n'; }
+}

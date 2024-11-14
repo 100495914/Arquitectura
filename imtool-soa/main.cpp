@@ -31,7 +31,13 @@ int main(int const argc, char * argv[]) {
           // Resize
           handleResize(cmd.value());
         }
-      break;
+        break;
+      case 3:
+        {
+          // cutfreq
+          handleCutfreq(cmd.value());
+        }
+        break;
       default:
         {
           std::cerr << "Error: Operacion no reconocida.\n";
