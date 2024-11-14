@@ -27,6 +27,59 @@ PPMMetadata loadMetadata(std::string const & filepath) {
   return metadata;
 }
 
+bool ImageSOA_8bit::operator==(ImageSOA_8bit const & other) const {
+  // Check if the dimensions are the same
+  if (this->gWidth() != other.gWidth() || this->gHeight() != other.gHeight() ||
+      this->gMaxColorValue() != other.gMaxColorValue() ||
+      this->gMagicNumber() != other.gMagicNumber()) {
+    return false;
+  }
+
+  // Check if the color channels are the same size
+  if (this->red.size() != other.red.size() || this->green.size() != other.green.size() ||
+      this->blue.size() != other.blue.size()) {
+    return false;
+  }
+  constexpr int max_pixel_offset = 5;
+  // Check if the pixel data in each channel is similar within a difference of 5
+  for (size_t i = 0; i < this->red.size(); ++i) {
+    if (std::abs(this->red[i] - other.red[i]) >= max_pixel_offset ||
+        std::abs(this->green[i] - other.green[i]) >= max_pixel_offset ||
+        std::abs(this->blue[i] - other.blue[i]) >= max_pixel_offset) {
+      std::cout << "Byte difference exceeds 5 at index: " << i << '\n';
+      return false;
+    }
+  }
+
+  // If all checks pass, the images are considered equal
+  return true;
+}
+
+bool ImageSOA_16bit::operator==(ImageSOA_16bit const & other) const {
+  // Check if the dimensions are the same
+  if (this->gWidth() != other.gWidth() || this->gHeight() != other.gHeight() ||
+      this->gMaxColorValue() != other.gMaxColorValue() ||
+      this->gMagicNumber() != other.gMagicNumber()) {
+    return false;
+  }
+
+  // Check if the color channels are the same size
+  if (this->red.size() != other.red.size() || this->green.size() != other.green.size() ||
+      this->blue.size() != other.blue.size()) {
+    return false;
+  }
+
+  // Check if the pixel data in each channel is the same
+  for (size_t i = 0; i < this->red.size(); ++i) {
+    if (this->red[i] != other.red[i] || this->green[i] != other.green[i] ||
+        this->blue[i] != other.blue[i]) {
+      return false;
+    }
+  }
+  // If all checks pass, the images are equal
+  return true;
+}
+
 void ImageSOA_8bit::loadData(std::string const & filepath) {
   std::ifstream file(filepath, std::ios::binary);
   file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -435,18 +488,33 @@ void ImageSOA_16bit::resize(Dimensions const dim) {
 
 void ImageSOA_8bit::reduceColors(size_t n) {
   auto frequencies = computeColorFrequencies();
+
+  // If the number of colors to reduce is greater than or equal to the total number of colors,
+  // return early
   if (n >= frequencies.size()) { return; }
 
+  // Get the least frequent colors
   auto colorsToRemove = findLeastFrequentColors(frequencies, n);
+
+  // Create a set for valid colors
   std::unordered_set<RGB8> validColors;
   for (auto const & [color, freq] : frequencies) { validColors.insert(color); }
+
+  // Remove the least frequent colors from the valid color set
   for (auto const & color : colorsToRemove) { validColors.erase(color); }
 
+  // Precompute nearest colors for the least frequent colors
   std::unordered_map<RGB8, RGB8> replacementMap;
+  replacementMap.reserve(colorsToRemove.size());  // Reserve memory for efficiency
+
+  // Compute nearest colors and fill the replacement map
   for (auto const & color : colorsToRemove) {
-    replacementMap[color] = findNearestColor(color, validColors);
+    // Finding the closest color from the valid colors
+    RGB8 const closestColor = findNearestColor(color, validColors);
+    replacementMap[color]   = closestColor;
   }
 
+  // Replace the colors in the image with the new mapped colors
   replaceColors(replacementMap);
 }
 
@@ -496,9 +564,11 @@ double ImageSOA_8bit::colorDistance(const RGB8 & var_c1, const RGB8 & var_c2) {
 
 RGB8 ImageSOA_8bit::findNearestColor(const RGB8 & target,
                                      std::unordered_set<RGB8> const & validColors) {
+  // Initialize nearest color and minimum distance with the first color
   RGB8 nearest   = *validColors.begin();
   double minDist = colorDistance(target, nearest);
 
+  // Loop through each valid color and find the nearest color
   for (auto const & color : validColors) {
     double const dist = colorDistance(target, color);
     if (dist < minDist) {

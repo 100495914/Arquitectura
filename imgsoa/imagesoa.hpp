@@ -116,6 +116,8 @@ class ImageSOA_8bit final : public ImageSOA {
       : ImageSOA(metadata), red(gWidth() * gHeight()), green(gWidth() * gHeight()),
         blue(gWidth() * gHeight()) { }
 
+    bool operator==(ImageSOA_8bit const & other) const;
+
     void loadData(std::string const & filepath) override;
     void saveToFile(std::string const & filename) override;
 
@@ -153,6 +155,7 @@ class ImageSOA_16bit final : public ImageSOA {
       : ImageSOA(metadata), red(gWidth() * gHeight()), green(gWidth() * gHeight()),
         blue(gWidth() * gHeight()) { }
 
+    bool operator==(ImageSOA_16bit const & other) const;
     void loadData(std::string const & filepath) override;
     void saveToFileBE(std::string const & filename);
     void saveToFile(std::string const & filename) override;

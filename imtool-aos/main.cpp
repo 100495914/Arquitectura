@@ -1,11 +1,7 @@
-#include "../common/misc.hpp"
-#include "../common/progargs.hpp"
-#include "../imgaos/imageaos.hpp"
-
 #include <iostream>
 #include <stdexcept>
-
-
+#include "../common/progargs.hpp"
+#include "../imgaos/imageaos.hpp"
 
 namespace {
   void printInfo(const std::string& inputFilename, const PPMMetadata& metadata) {
