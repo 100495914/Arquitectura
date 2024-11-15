@@ -347,9 +347,9 @@ namespace {
     }
   }
 
-  void test_maxlevel(std::string & time) {
+  [[maybe_unused]] void test_maxlevel(std::string & time) {
     time = test_wrapper(test_maxlevelDeerSmall100);
-    std::cout << "Test maxlevel deer-small-100 finished in:" << time.count().str() << '\n';
+    std::cout << "Test maxlevel deer-small-100 finished in:" << time << '\n';
     time = test_wrapper(test_maxlevelDeerSmall255);
     std::cout << "Test maxlevel deer-small-255 finished in:" << time << '\n';
     time = test_wrapper(test_maxlevelDeerSmall1000);
@@ -363,7 +363,7 @@ namespace {
     std::cout << "Test maxlevel lake-small-65535 finished in:" << time << '\n';
   }
 
-  void test_resize(std::string & time) {
+  [[maybe_unused]] void test_resize(std::string & time) {
     time = test_wrapper(test_resizeDeerLarge100);
     std::cout << "Test resize deer-large-100 finished in:" << time << '\n';
     time = test_wrapper(test_resizeDeerLarge1000);
@@ -383,7 +383,8 @@ namespace {
     std::cout << "Test resize lake-small-1000 finished in:" << time << '\n';
   }
 
-  void test_cutfreq(std::string & time) {
+  [[maybe_unused]] void test_cutfreq(std::string & time) {
+    time = test_wrapper(test_cutFreqLake100k);
     std::cout << "Test cutfreq lake-100K finished in:" << time << '\n';
     time = test_wrapper(test_cutFreqLake162k);
     std::cout << "Test cutfreq lake-162K finished in:" << time << '\n';
@@ -395,8 +396,7 @@ int main() {
   test_comparator();
   std::cout << "Current working directory: " << cwd << '\n';
   std::string time;
-  time = test_wrapper(test_cutFreqLake100k);
-  test_cutfreq(time);
+  //test_cutfreq(time);
 
   test_resize(time);
 

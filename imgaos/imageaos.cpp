@@ -31,8 +31,8 @@ std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, const P
     std::vector<Pixel> resizedPixels(static_cast<std::vector<Pixel>::size_type>(newWidth) * static_cast<std::vector<Pixel>::size_type>(newHeight));
     for (int yPrime = 0; yPrime < newHeight; ++yPrime) {
         for (int xPrime = 0; xPrime < newWidth; ++xPrime) {
-            const float normalizedX = (static_cast<float>(xPrime) * static_cast<float>(originalMetadata.width)) / static_cast<float>(newWidth);
-            const float normalizedY = (static_cast<float>(yPrime) * static_cast<float>(originalMetadata.height)) / static_cast<float>(newHeight);
+            const float normalizedX = (static_cast<float>(xPrime) * static_cast<float>(originalMetadata.width-1)) / static_cast<float>(newWidth-1);
+            const float normalizedY = (static_cast<float>(yPrime) * static_cast<float>(originalMetadata.height-1)) / static_cast<float>(newHeight-1);
 
             const int lowerX = static_cast<int>(std::floor(normalizedX));
             int upperX = static_cast<int>(std::ceil(normalizedX));
