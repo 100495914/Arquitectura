@@ -1,2 +1,1 @@
-add_executable(ftest-soa
-        ftest.cpp)
+add_executable(ftest-soa)
