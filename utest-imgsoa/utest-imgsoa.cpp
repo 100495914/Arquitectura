@@ -84,9 +84,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq deer-large-100 failed!" << '\n';
+      std::cerr << "Test resize deer-large-100 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq deer-large-100 passed!" << '\n';
+      std::cout << "Test resize deer-large-100 passed!" << '\n';
     }
   }
 
@@ -104,9 +104,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq deer-large-1000 failed!" << '\n';
+      std::cerr << "Test resize deer-large-1000 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq deer-large-1000 passed!" << '\n';
+      std::cout << "Test resize deer-large-1000 passed!" << '\n';
     }
   }
 
@@ -124,9 +124,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq deer-small-100 failed!" << '\n';
+      std::cerr << "Test resize deer-small-100 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq deer-small-100 passed!" << '\n';
+      std::cout << "Test resize deer-small-100 passed!" << '\n';
     }
   }
 
@@ -144,9 +144,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq deer-small-1000 failed!" << '\n';
+      std::cerr << "Test resize deer-small-1000 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq deer-small-1000 passed!" << '\n';
+      std::cout << "Test resize deer-small-1000 passed!" << '\n';
     }
   }
 
@@ -164,9 +164,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq lake-large-100 failed!" << '\n';
+      std::cerr << "Test resize lake-large-100 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq lake-large-100 passed!" << '\n';
+      std::cout << "Test resize lake-large-100 passed!" << '\n';
     }
   }
 
@@ -184,9 +184,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq lake-large-1000 failed!" << '\n';
+      std::cerr << "Test resize lake-large-1000 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq lake-large-1000 passed!" << '\n';
+      std::cout << "Test resize lake-large-1000 passed!" << '\n';
     }
   }
 
@@ -204,9 +204,9 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq lake-small-100 failed!" << '\n';
+      std::cerr << "Test resize lake-small-100 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq lake-small-100 passed!" << '\n';
+      std::cout << "Test resize lake-small-100 passed!" << '\n';
     }
   }
 
@@ -224,10 +224,160 @@ namespace {
     image2->loadData(input2);
     image1->resize(dim);
     if (*image1 != *image2) {
-      std::cerr << "Test cutFreq lake-small-1000 failed!" << '\n';
+      std::cerr << "Test resize lake-small-1000 failed!" << '\n';
     } else {
-      std::cout << "Test cutFreq lake-small-1000 passed!" << '\n';
+      std::cout << "Test resize lake-small-1000 passed!" << '\n';
     }
+  }
+
+  [[maybe_unused]] void test_maxlevelDeerSmall100() {
+    std::string const input1     = "../../input/deer-small.ppm";
+    std::string const input2     = "../../output/maxlevel/deer-small-100.ppm";
+    constexpr size_t newMaxColor = 100;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_8bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    image1->maxLevel(newMaxColor);
+    if (*image1 != *image2) {
+      std::cerr << "Test maxlevel deer-small-100 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel deer-small-100 passed!" << '\n';
+    }
+  }
+
+  [[maybe_unused]] void test_maxlevelDeerSmall255() {
+    std::string const input1     = "../../input/deer-small.ppm";
+    std::string const input2     = "../../output/maxlevel/deer-small-255.ppm";
+    constexpr size_t newMaxColor = 255;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_8bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    image1->maxLevel(newMaxColor);
+    if (*image1 != *image2) {
+      std::cerr << "Test maxlevel deer-small-255 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel deer-small-255 passed!" << '\n';
+    }
+  }
+
+  [[maybe_unused]] void test_maxlevelDeerSmall1000() {
+    std::string const input1     = "../../input/deer-small.ppm";
+    std::string const input2     = "../../output/maxlevel/deer-small-1000.ppm";
+    constexpr size_t newMaxColor = 1000;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_16bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
+    if (*image3 != *image2) {
+      std::cerr << "Test maxlevel deer-small-1000 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel deer-small-1000 passed!" << '\n';
+    }
+  }
+
+  [[maybe_unused]] void test_maxlevelDeerSmall65535() {
+    std::string const input1     = "../../input/deer-small.ppm";
+    std::string const input2     = "../../output/maxlevel/deer-small-65535.ppm";
+    constexpr size_t newMaxColor = 65535;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_16bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
+    if (*image3 != *image2) {
+      std::cerr << "Test maxlevel lake-small-65535 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel lake-small-65535 passed!" << '\n';
+    }
+  }
+
+  [[maybe_unused]] void test_maxlevelLakeSmall255() {
+    std::string const input1     = "../../input/lake-small.ppm";
+    std::string const input2     = "../../output/maxlevel/lake-small-255.ppm";
+    constexpr size_t newMaxColor = 255;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_8bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    image1->maxLevel(newMaxColor);
+    if (*image1 != *image2) {
+      std::cerr << "Test maxlevel lake-small-255 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel lake-small-255 passed!" << '\n';
+    }
+  }
+
+  [[maybe_unused]] void test_maxlevelLakeSmall65535() {
+    std::string const input1     = "../../input/lake-small.ppm";
+    std::string const input2     = "../../output/maxlevel/lake-small-65535.ppm";
+    constexpr size_t newMaxColor = 65535;
+    PPMMetadata const metadata1  = loadMetadata(input1);
+    PPMMetadata const metadata2  = loadMetadata(input2);
+    auto const image1            = std::make_unique<ImageSOA_8bit>(metadata1);
+    auto const image2            = std::make_unique<ImageSOA_16bit>(metadata2);
+    image1->loadData(input1);
+    image2->loadData(input2);
+    std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
+    if (*image3 != *image2) {
+      std::cerr << "Test maxlevel lake-small-65535 failed!" << '\n';
+    } else {
+      std::cout << "Test maxlevel lake-small-65535 passed!" << '\n';
+    }
+  }
+
+  void test_maxlevel(std::chrono::duration<long> & time) {
+    time = test_wrapper(test_maxlevelDeerSmall100);
+    std::cout << "Test maxlevel deer-small-100 finished in:" << time << '\n';
+    time = test_wrapper(test_maxlevelDeerSmall255);
+    std::cout << "Test maxlevel deer-small-255 finished in:" << time << '\n';
+    time = test_wrapper(test_maxlevelDeerSmall1000);
+    std::cout << "Test maxlevel deer-small-1000 finished in:" << time << '\n';
+    time = test_wrapper(test_maxlevelDeerSmall65535);
+    std::cout << "Test maxlevel deer-small-65535 finished in:" << time << '\n';
+
+    time = test_wrapper(test_maxlevelLakeSmall255);
+    std::cout << "Test maxlevel lake-small-255 finished in:" << time << '\n';
+    time = test_wrapper(test_maxlevelLakeSmall65535);
+    std::cout << "Test maxlevel lake-small-65535 finished in:" << time << '\n';
+  }
+
+  void test_resize(std::chrono::duration<long> & time) {
+    time = test_wrapper(test_resizeDeerLarge100);
+    std::cout << "Test resize deer-large-100 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeDeerLarge1000);
+    std::cout << "Test resize deer-large-1000 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeDeerSmall100);
+    std::cout << "Test resize deer-small-100 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeDeerSmall1000);
+    std::cout << "Test resize deer-small-1000 finished in:" << time << '\n';
+
+    time = test_wrapper(test_resizeLakeLarge100);
+    std::cout << "Test resize lake-large-100 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeLakeLarge1000);
+    std::cout << "Test resize lake-large-1000 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeLakeSmall100);
+    std::cout << "Test resize lake-small-100 finished in:" << time << '\n';
+    time = test_wrapper(test_resizeLakeSmall1000);
+    std::cout << "Test resize lake-small-1000 finished in:" << time << '\n';
+  }
+
+  void test_cutfreq(std::chrono::duration<long> & time) {
+    std::cout << "Test cutfreq lake-100K finished in:" << time << '\n';
+    time = test_wrapper(test_cutFreqLake162k);
+    std::cout << "Test cutfreq lake-162K finished in:" << time << '\n';
   }
 }  // namespace
 
@@ -236,22 +386,10 @@ int main() {
   test_comparator();
   std::cout << "Current working directory: " << cwd << '\n';
   std::chrono::duration<long> time{};
+  time = test_wrapper(test_cutFreqLake100k);
+  test_cutfreq(time);
 
-  time = test_wrapper(test_resizeDeerLarge100);
-  std::cout << "Test deer-large-100 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeDeerLarge1000);
-  std::cout << "Test deer-large-1000 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeDeerSmall100);
-  std::cout << "Test deer-small-100 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeDeerSmall1000);
-  std::cout << "Test deer-small-1000 finished in:" << time << '\n';
+  test_resize(time);
 
-  time = test_wrapper(test_resizeLakeLarge100);
-  std::cout << "Test lake-large-100 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeLakeLarge1000);
-  std::cout << "Test lake-large-1000 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeLakeSmall100);
-  std::cout << "Test lake-small-100 finished in:" << time << '\n';
-  time = test_wrapper(test_resizeLakeSmall1000);
-  std::cout << "Test lake-small-1000 finished in:" << time << '\n';
+  test_maxlevel(time);
 }

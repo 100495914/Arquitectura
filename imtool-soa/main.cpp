@@ -5,40 +5,17 @@
 #include <optional>
 
 int main(int const argc, char * argv[]) {
-  if (argc < 4) {
-    printUsage();
+  std::vector<std::string> const arguments(argv, argv + argc);
+  if (argc < 3) {
+    std::cout << "Error: Invalid number of arguments: " << arguments.size() << '\n';
     return 1;
   }
-  std::vector<std::string> const arguments(argv, argv + argc);
   auto const cmd = sanitizeArgs(arguments);
   if (!cmd) { return -1; }
-  if (checkProperArgumentNumber(cmd->operation, arguments.size()) == 0) { return -1; }
+  if (cmd->operation == -1) { return -1; }
+  if (checkProperArgumentNumber(cmd->operation, arguments.size(), cmd.value()) == 0) { return -1; }
   try {
-    switch (cmd->operation) {
-      case 1:
-        {
-          // Maxlevel
-          handleMaxLevel(cmd.value());
-        }
-        break;  // Add the break to avoid fall-through to the default case
-      case 2:
-        {
-          // Resize
-          handleResize(cmd.value());
-        }
-        break;
-      case 3:
-        {
-          // cutfreq
-          handleCutfreq(cmd.value());
-        }
-        break;
-      default:
-        {
-          std::cerr << "Error: Operacion no reconocida.\n";
-          return -1;
-        }
-    }
+    return operate(arguments, cmd);
   } catch (std::exception const & e) {
     std::cerr << "Error: " << e.what() << "\n";
     return -1;
