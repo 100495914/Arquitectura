@@ -27,6 +27,7 @@ FetchContent_MakeAvailable(GSL)
 set(CMAKE_CXX_CLANG_TIDY clang-tidy;
         -format-style=file;
         -header-filter=.;)
+
 # All includes relative to source tree root.
 include_directories (PUBLIC .)
 # Process cmake from sim and fluid directories

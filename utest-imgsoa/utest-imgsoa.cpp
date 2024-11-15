@@ -6,14 +6,23 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 namespace {
 
-  std::chrono::duration<long> test_wrapper(void (*func)()) {
+
+  std::string test_wrapper(void (*func)()) {
     auto const start = std::chrono::high_resolution_clock::now();
     func();
     auto const end = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::seconds>(end - start);
+
+    // Calculate the duration in seconds
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+
+    // Convert the duration to a string
+    std::ostringstream oss;
+    oss << duration.count();
+    return oss.str();
   }
 
   void test_comparator() {
@@ -338,9 +347,9 @@ namespace {
     }
   }
 
-  void test_maxlevel(std::chrono::duration<long> & time) {
+  void test_maxlevel(std::string & time) {
     time = test_wrapper(test_maxlevelDeerSmall100);
-    std::cout << "Test maxlevel deer-small-100 finished in:" << time << '\n';
+    std::cout << "Test maxlevel deer-small-100 finished in:" << time.count().str() << '\n';
     time = test_wrapper(test_maxlevelDeerSmall255);
     std::cout << "Test maxlevel deer-small-255 finished in:" << time << '\n';
     time = test_wrapper(test_maxlevelDeerSmall1000);
@@ -354,7 +363,7 @@ namespace {
     std::cout << "Test maxlevel lake-small-65535 finished in:" << time << '\n';
   }
 
-  void test_resize(std::chrono::duration<long> & time) {
+  void test_resize(std::string & time) {
     time = test_wrapper(test_resizeDeerLarge100);
     std::cout << "Test resize deer-large-100 finished in:" << time << '\n';
     time = test_wrapper(test_resizeDeerLarge1000);
@@ -374,7 +383,7 @@ namespace {
     std::cout << "Test resize lake-small-1000 finished in:" << time << '\n';
   }
 
-  void test_cutfreq(std::chrono::duration<long> & time) {
+  void test_cutfreq(std::string & time) {
     std::cout << "Test cutfreq lake-100K finished in:" << time << '\n';
     time = test_wrapper(test_cutFreqLake162k);
     std::cout << "Test cutfreq lake-162K finished in:" << time << '\n';
@@ -385,7 +394,7 @@ int main() {
   std::filesystem::path const cwd = std::filesystem::current_path();
   test_comparator();
   std::cout << "Current working directory: " << cwd << '\n';
-  std::chrono::duration<long> time{};
+  std::string time;
   time = test_wrapper(test_cutFreqLake100k);
   test_cutfreq(time);
 

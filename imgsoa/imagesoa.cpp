@@ -446,8 +446,8 @@ std::vector<uint8_t> ImageSOA_8bit::resize_helper(std::vector<uint8_t> & channel
   auto const height              = static_cast<double>(original_dimensions.height);
   auto const new_size            = static_cast<size_t>(new_width * new_height);
   std::vector<uint8_t> new_channel(new_size);
-  double const width_div  = (width / new_width);
-  double const height_div = (height / new_height);
+  double const width_div  = ((width - 1) / new_width);
+  double const height_div = ((height - 1) / new_height);
   for (size_t new_y = 0; new_y < static_cast<size_t>(new_height); new_y++) {
     for (size_t new_x = 0; new_x < static_cast<size_t>(new_width); new_x++) {
       double const x_target = static_cast<double>(new_x) * width_div;
