@@ -10,9 +10,7 @@
 #include <optional>
 
 namespace {
-  constexpr int cinco     = 5;
-  constexpr int ocho      = 8;
-  constexpr int dieciseis = 16;
+  constexpr int cinco = 5;
 
   int operationCode(std::string const & operation) {
     if (operation == "info") { return 0; }
@@ -82,7 +80,7 @@ namespace {
 
     int const newMaxBitType = numberInXbitRange(newMax);
     // Create and load 8-bit image
-    auto image8 = std::make_unique<ImageSOA_8bit>(metadata);
+    auto const image8 = std::make_unique<ImageSOA_8bit>(metadata);
     image8->loadData(input);
 
     // Handle scaling based on new max range
@@ -91,7 +89,7 @@ namespace {
       image8->saveToFile(output);
     } else if (newMaxBitType == dieciseis) {
       // Scale to 16-bit and save
-      auto image8_16 = image8->maxLevelChangeChannelSize(newMax);
+      auto const image8_16 = image8->maxLevelChangeChannelSize(newMax);
       image8_16->saveToFile(output);
     } else {
       std::cerr << "Rango de newMax no valido.\n";

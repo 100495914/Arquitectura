@@ -28,12 +28,13 @@ struct Dimensions {
 };
 
 struct Point {
-  int x_coord;
-  int y_coord;
+    int x_coord;
+    int y_coord;
 };
 
 struct RGB8 {
     uint8_t r, g, b;
+
     bool operator==(const RGB8 & other) const {
       return r == other.r && g == other.g && b == other.b;
     }
@@ -47,20 +48,25 @@ struct RGB16 {
     }
 };
 
+constexpr uint ocho        = 8;
+constexpr uint dieciseis   = 16;
+constexpr uint treintaydos = 32;
+
 // Hash functions for unordered_map
 namespace std {
   template <>
   struct hash<RGB8> {
       size_t operator()(const RGB8 & color) const noexcept {
-        return (static_cast<size_t>(color.r) << 16) | (static_cast<size_t>(color.g) << 8) | color.b;
+        return (static_cast<size_t>(color.r) << dieciseis) |
+               (static_cast<size_t>(color.g) << ocho) | color.b;
       }
   };
 
   template <>
   struct hash<RGB16> {
       size_t operator()(const RGB16 & color) const noexcept {
-        return (static_cast<size_t>(color.r) << 32) | (static_cast<size_t>(color.g) << 16) |
-               color.b;
+        return (static_cast<size_t>(color.r) << treintaydos) |
+               (static_cast<size_t>(color.g) << dieciseis) | color.b;
       }
   };
 }  // namespace std
@@ -133,11 +139,12 @@ class ImageSOA_8bit final : public ImageSOA {
 
     void maxLevel(uint newMax) override;
     [[nodiscard]] std::unique_ptr<ImageSOA_16bit> maxLevelChangeChannelSize(uint newMax);
-    void resizeChannel(std::vector<uint8_t> const & src, std::vector<uint8_t> & dst,
-                       Dimensions dim) const;
-    static int calculatePosition(Point point, Dimensions dim) ;
+    static int calculatePosition(Point point, Dimensions dim);
     void resize(Dimensions dim);
-    std::vector<uint8_t> resize_helper(std::vector<uint8_t> & channel, Dimensions dim);
+    static double helper_resizeInterpolate(std::vector<uint8_t> & channel,
+                                           Dimensions original_dimensions, double x_target,
+                                           double y_target);
+    std::vector<uint8_t> resize_helper(std::vector<uint8_t> & channel, Dimensions dim) const;
     void reduceColors(size_t n);
 
   private:
@@ -172,11 +179,12 @@ class ImageSOA_16bit final : public ImageSOA {
 
     void maxLevel(uint newMax) override;
     [[nodiscard]] std::unique_ptr<ImageSOA_8bit> maxLevelChangeChannelSize(uint newMax);
-    [[nodiscard]] uint16_t getInterpolatedPixel(double x_var, std::vector<uint16_t> const & channel,
-                                                double y_var) const;
-    void resizeChannel(std::vector<uint16_t> const & src, std::vector<uint16_t> & dst,
-                       Dimensions dim) const;
+    static int calculatePosition(Point point, Dimensions dim);
     void resize(Dimensions dim);
+    static double helper_resizeInterpolate(std::vector<uint16_t> & channel,
+                                           Dimensions original_dimensions, double x_target,
+                                           double y_target);
+    std::vector<uint16_t> resize_helper(std::vector<uint16_t> & channel, Dimensions dim) const;
     void reduceColors(size_t n);
 
   private:

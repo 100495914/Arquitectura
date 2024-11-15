@@ -26,11 +26,12 @@ PPMMetadata loadMetadata(std::string const & filepath) {
   // Create the appropriate image object based on maxColorValue
   return metadata;
 }
+
 namespace {
   double interpolate(double const value1, double const value2, double const weight) {
     return value1 + (weight * (value2 - value1));
   }
-}
+}  // namespace
 
 bool ImageSOA_8bit::operator==(ImageSOA_8bit const & other) const {
   // Check if the dimensions are the same
@@ -377,11 +378,10 @@ std::unique_ptr<ImageSOA_8bit> ImageSOA_16bit::maxLevelChangeChannelSize(uint co
   return image;
 }
 
-
 int ImageSOA_8bit::calculatePosition(Point const point, Dimensions dim) {
-  int const var_x = point.x_coord;
-  int const var_y = point.y_coord;
-  int const width = static_cast<int>(dim.width);
+  int const var_x  = point.x_coord;
+  int const var_y  = point.y_coord;
+  int const width  = static_cast<int>(dim.width);
   int const height = static_cast<int>(dim.height);
   // Ensure the coordinates are within bounds
   if (var_x < 0 || var_x >= width || var_y < 0 || var_y >= height) {
@@ -390,7 +390,7 @@ int ImageSOA_8bit::calculatePosition(Point const point, Dimensions dim) {
   }
 
   // Calculate the position in the 1D array
-  return (var_y * width) + var_x;
+  return ((var_y) *width) + (var_x);
 }
 
 void ImageSOA_8bit::resize(Dimensions const dim) {
@@ -403,117 +403,165 @@ void ImageSOA_8bit::resize(Dimensions const dim) {
   sHeight(dim.height);
 }
 
-std::vector<uint8_t> ImageSOA_8bit::resize_helper(std::vector<uint8_t> & channel, Dimensions dim) {
-  auto const new_width  = static_cast<double>(dim.width);
-  auto const new_height = static_cast<double>(dim.height);
-  auto original_dimensions = Dimensions{.width=gWidth(), .height=gHeight()};
-  auto const width      = static_cast<double>(original_dimensions.width);
-  auto const height     = static_cast<double>(original_dimensions.height);
-  auto const new_size   = static_cast<size_t>(new_width * new_height);
+double ImageSOA_8bit::helper_resizeInterpolate(std::vector<uint8_t> & channel,
+                                               Dimensions const original_dimensions,
+                                               double const x_target, double const y_target) {
+  auto const width  = static_cast<double>(original_dimensions.width);
+  auto const height = static_cast<double>(original_dimensions.height);
+
+  int const x_l = static_cast<int>(std::floor(x_target));
+  int x_h       = static_cast<int>(std::ceil(x_target));
+  int const y_l = static_cast<int>(std::floor(y_target));
+  int y_h       = static_cast<int>(std::ceil(y_target));
+  if (x_h >= static_cast<int>(width)) { x_h = x_l; }
+  if (y_h >= static_cast<int>(height)) { y_h = y_l; }
+  auto const index_xl_yl = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_l, .y_coord = y_l}, original_dimensions));
+  auto const index_xh_yl = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_h, .y_coord = y_l}, original_dimensions));
+  auto const index_xl_yh = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_l, .y_coord = y_h}, original_dimensions));
+  auto const index_xh_yh = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_h, .y_coord = y_h}, original_dimensions));
+  int const value_xl_yl = channel[index_xl_yl];
+  int const value_xh_yl = channel[index_xh_yl];
+  int const value_xl_yh = channel[index_xl_yh];
+  int const value_xh_yh = channel[index_xh_yh];
+  double weight_x       = 0;
+  if (x_h - x_l != 0) { weight_x = (x_target - x_l) / (x_h - x_l); }
+  double const color1 = interpolate(value_xl_yl, value_xh_yl, weight_x);
+  double const color2 = interpolate(value_xl_yh, value_xh_yh, weight_x);
+  double weight_y     = 0;
+  if (y_h - y_l != 0) { weight_y = (y_target - y_l) / (y_h - y_l); }
+  double const interpolated_pixel = interpolate(color1, color2, weight_y);
+  return interpolated_pixel;
+}
+
+std::vector<uint8_t> ImageSOA_8bit::resize_helper(std::vector<uint8_t> & channel,
+                                                  Dimensions const dim) const {
+  auto const new_width           = static_cast<double>(dim.width);
+  auto const new_height          = static_cast<double>(dim.height);
+  auto const original_dimensions = Dimensions{.width = gWidth(), .height = gHeight()};
+  auto const width               = static_cast<double>(original_dimensions.width);
+  auto const height              = static_cast<double>(original_dimensions.height);
+  auto const new_size            = static_cast<size_t>(new_width * new_height);
   std::vector<uint8_t> new_channel(new_size);
-  double const width_div = width / new_width;
-  double const height_div = height / new_height;
+  double const width_div  = (width / new_width);
+  double const height_div = (height / new_height);
   for (size_t new_y = 0; new_y < static_cast<size_t>(new_height); new_y++) {
     for (size_t new_x = 0; new_x < static_cast<size_t>(new_width); new_x++) {
       double const x_target = static_cast<double>(new_x) * width_div;
-      double const y_target = static_cast<double>(new_y) * height_div;
-      int const x_l = static_cast<int>(std::floor(x_target));
-      int x_h = static_cast<int>(std::ceil(x_target));
-      int const y_l = static_cast<int>(std::floor(y_target));
-      int y_h = static_cast<int>(std::ceil(y_target));
 
-      if (x_h >= static_cast<int>(width)) { x_h = x_l;
+      double const y_target     = (static_cast<double>(new_y) * height_div);
+      double interpolated_pixel = 0;
+      if (std::floor(x_target) != x_target || std::floor(y_target) != y_target) {
+        interpolated_pixel =
+            helper_resizeInterpolate(channel, original_dimensions, x_target, y_target);
+      } else {
+        interpolated_pixel = channel[static_cast<size_t>(calculatePosition(
+            Point{.x_coord = static_cast<int>(x_target), .y_coord = static_cast<int>(y_target)},
+            original_dimensions))];
       }
-      if (y_h >= static_cast<int>(height)) { y_h = y_l;
-      }
-
-      auto const index_xl_yl = static_cast<size_t>(calculatePosition(Point{.x_coord=x_l, .y_coord=y_l}, original_dimensions));
-      auto const index_xh_yl = static_cast<size_t>(calculatePosition(Point{.x_coord=x_h, .y_coord=y_l}, original_dimensions));
-      auto const index_xl_yh = static_cast<size_t>(calculatePosition(Point{.x_coord=x_l, .y_coord=y_h}, original_dimensions));
-      auto const index_xh_yh = static_cast<size_t>(calculatePosition(Point{.x_coord=x_h, .y_coord=y_h}, original_dimensions));
-
-
-      int const value_xl_yl = channel[index_xl_yl];
-      int const value_xh_yl = channel[index_xh_yl];
-      int const value_xl_yh = channel[index_xl_yh];
-      int const value_xh_yh = channel[index_xh_yh];
-
-      double weight_x = 1;
-      if (x_h - x_l != 0) {
-        weight_x = (x_target - x_l) / (x_h - x_l);
-      }
-
-      double const color1 = interpolate(value_xl_yl, value_xh_yl, weight_x);
-      double const color2 = interpolate(value_xl_yh, value_xh_yh, weight_x);
-
-      double weight_y = 1;
-      if (y_h - y_l != 0) {
-        weight_y = (y_target - y_l) / (y_h - y_l);
-      }
-      double const interpolated_pixel = interpolate(color1, color2, weight_y);
-      auto new_point = Point{.x_coord=static_cast<int>(new_x), .y_coord=static_cast<int>(new_y)};
-      auto const final_index = static_cast<size_t>(calculatePosition(new_point, dim));
+      auto const new_point =
+          Point{.x_coord = static_cast<int>(new_x), .y_coord = static_cast<int>(new_y)};
+      auto const final_index   = static_cast<size_t>(calculatePosition(new_point, dim));
       new_channel[final_index] = static_cast<uint8_t>(std::round(interpolated_pixel));
     }
   }
   return new_channel;
 }
 
-uint16_t ImageSOA_16bit::getInterpolatedPixel(double const x_var,
-                                              std::vector<uint16_t> const & channel,
-                                              double const y_var) const {
-  auto const x_one   = static_cast<size_t>(x_var);
-  auto const y_one   = static_cast<size_t>(y_var);
-  size_t const x_two = std::min(x_one + 1, gWidth() - 1);
-  size_t const y_two = std::min(y_one + 1, gHeight() - 1);
-
-  double const f_x = x_var - static_cast<double>(x_one);
-  double const f_y = y_var - static_cast<double>(y_one);
-
-  uint16_t const p_1 = channel[(y_one * gWidth()) + x_one];
-  uint16_t const p_2 = channel[(y_one * gWidth()) + x_two];
-  uint16_t const p_3 = channel[(y_two * gWidth()) + x_one];
-  uint16_t const p_4 = channel[(y_two * gWidth()) + x_two];
-
-  return static_cast<uint16_t>(((1 - f_x) * (1 - f_y) * p_1) + (f_x * (1 - f_y) * p_2) +
-                               ((1 - f_x) * f_y * p_3) + (f_x * f_y * p_4));
-}
-
-void ImageSOA_16bit::resizeChannel(std::vector<uint16_t> const & src, std::vector<uint16_t> & dst,
-                                   Dimensions const dim) const {
-  size_t const newWidth  = dim.width;
-  size_t const newHeight = dim.height;
-  double const scaleX    = static_cast<double>(gWidth()) / static_cast<double>(newWidth);
-  double const scaleY    = static_cast<double>(gHeight()) / static_cast<double>(newHeight);
-
-  for (size_t y_var = 0; y_var < newHeight; ++y_var) {
-    for (size_t x_var = 0; x_var < newWidth; ++x_var) {
-      double const srcX               = static_cast<double>(x_var) * scaleX;
-      double const srcY               = static_cast<double>(y_var) * scaleY;
-      dst[(y_var * newWidth) + x_var] = getInterpolatedPixel(srcX, src, srcY);
-    }
+int ImageSOA_16bit::calculatePosition(Point const point, Dimensions dim) {
+  int const var_x  = point.x_coord;
+  int const var_y  = point.y_coord;
+  int const width  = static_cast<int>(dim.width);
+  int const height = static_cast<int>(dim.height);
+  // Ensure the coordinates are within bounds
+  if (var_x < 0 || var_x >= width || var_y < 0 || var_y >= height) {
+    std::cerr << "Error: Coordinates out of bounds!" << '\n';
+    return -1;  // Return an invalid index
   }
+
+  // Calculate the position in the 1D array
+  return ((var_y) *width) + (var_x);
 }
 
 void ImageSOA_16bit::resize(Dimensions const dim) {
-  // Create new vectors for resized image
-  std::vector<uint16_t> newRed(dim.width * dim.height);
-  std::vector<uint16_t> newGreen(dim.width * dim.height);
-  std::vector<uint16_t> newBlue(dim.width * dim.height);
-
-  // Resize each channel
-  resizeChannel(red, newRed, dim);
-  resizeChannel(green, newGreen, dim);
-  resizeChannel(blue, newBlue, dim);
-
-  // Replace old vectors with new ones
-  red   = std::move(newRed);
-  green = std::move(newGreen);
-  blue  = std::move(newBlue);
-
-  // Update dimensions
+  std::cout << dim.width << "   " << dim.height << '\n';
+  // Replace the old channels with the new resized ones
+  red   = resize_helper(red, dim);
+  green = resize_helper(green, dim);
+  blue  = resize_helper(blue, dim);
   sWidth(dim.width);
   sHeight(dim.height);
+}
+
+double ImageSOA_16bit::helper_resizeInterpolate(std::vector<uint16_t> & channel,
+                                                Dimensions const original_dimensions,
+                                                double const x_target, double const y_target) {
+  auto const width  = static_cast<double>(original_dimensions.width);
+  auto const height = static_cast<double>(original_dimensions.height);
+
+  int const x_l = static_cast<int>(std::floor(x_target));
+  int x_h       = static_cast<int>(std::ceil(x_target));
+  int const y_l = static_cast<int>(std::floor(y_target));
+  int y_h       = static_cast<int>(std::ceil(y_target));
+  if (x_h >= static_cast<int>(width)) { x_h = x_l; }
+  if (y_h >= static_cast<int>(height)) { y_h = y_l; }
+  auto const index_xl_yl = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_l, .y_coord = y_l}, original_dimensions));
+  auto const index_xh_yl = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_h, .y_coord = y_l}, original_dimensions));
+  auto const index_xl_yh = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_l, .y_coord = y_h}, original_dimensions));
+  auto const index_xh_yh = static_cast<size_t>(
+      calculatePosition(Point{.x_coord = x_h, .y_coord = y_h}, original_dimensions));
+  int const value_xl_yl = channel[index_xl_yl];
+  int const value_xh_yl = channel[index_xh_yl];
+  int const value_xl_yh = channel[index_xl_yh];
+  int const value_xh_yh = channel[index_xh_yh];
+  double weight_x       = 0;
+  if (x_h - x_l != 0) { weight_x = (x_target - x_l) / (x_h - x_l); }
+  double const color1 = interpolate(value_xl_yl, value_xh_yl, weight_x);
+  double const color2 = interpolate(value_xl_yh, value_xh_yh, weight_x);
+  double weight_y     = 0;
+  if (y_h - y_l != 0) { weight_y = (y_target - y_l) / (y_h - y_l); }
+  double const interpolated_pixel = interpolate(color1, color2, weight_y);
+  return interpolated_pixel;
+}
+
+std::vector<uint16_t> ImageSOA_16bit::resize_helper(std::vector<uint16_t> & channel,
+                                                    Dimensions const dim) const {
+  auto const new_width           = static_cast<double>(dim.width);
+  auto const new_height          = static_cast<double>(dim.height);
+  auto const original_dimensions = Dimensions{.width = gWidth(), .height = gHeight()};
+  auto const width               = static_cast<double>(original_dimensions.width);
+  auto const height              = static_cast<double>(original_dimensions.height);
+  auto const new_size            = static_cast<size_t>(new_width * new_height);
+  std::vector<uint16_t> new_channel(new_size);
+  double const width_div  = (width / new_width);
+  double const height_div = (height / new_height);
+  for (size_t new_y = 0; new_y < static_cast<size_t>(new_height); new_y++) {
+    for (size_t new_x = 0; new_x < static_cast<size_t>(new_width); new_x++) {
+      double const x_target = static_cast<double>(new_x) * width_div;
+
+      double const y_target     = (static_cast<double>(new_y) * height_div);
+      double interpolated_pixel = 0;
+      if (std::floor(x_target) != x_target || std::floor(y_target) != y_target) {
+        interpolated_pixel =
+            helper_resizeInterpolate(channel, original_dimensions, x_target, y_target);
+      } else {
+        interpolated_pixel = channel[static_cast<size_t>(calculatePosition(
+            Point{.x_coord = static_cast<int>(x_target), .y_coord = static_cast<int>(y_target)},
+            original_dimensions))];
+      }
+      auto const new_point =
+          Point{.x_coord = static_cast<int>(new_x), .y_coord = static_cast<int>(new_y)};
+      auto const final_index   = static_cast<size_t>(calculatePosition(new_point, dim));
+      new_channel[final_index] = static_cast<uint8_t>(std::round(interpolated_pixel));
+    }
+  }
+  return new_channel;
 }
 
 void ImageSOA_8bit::reduceColors(size_t n) {

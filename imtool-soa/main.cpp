@@ -3,21 +3,16 @@
 
 #include <iostream>
 #include <optional>
-#include <stdexcept>
-#include <variant>
 
 int main(int const argc, char * argv[]) {
   if (argc < 4) {
     printUsage();
     return 1;
   }
-
   std::vector<std::string> const arguments(argv, argv + argc);
-
   auto const cmd = sanitizeArgs(arguments);
   if (!cmd) { return -1; }
   if (checkProperArgumentNumber(cmd->operation, arguments.size()) == 0) { return -1; }
-
   try {
     switch (cmd->operation) {
       case 1:
