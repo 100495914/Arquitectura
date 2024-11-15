@@ -27,9 +27,13 @@ struct Dimensions {
     size_t height;
 };
 
+struct Point {
+  int x_coord;
+  int y_coord;
+};
+
 struct RGB8 {
     uint8_t r, g, b;
-
     bool operator==(const RGB8 & other) const {
       return r == other.r && g == other.g && b == other.b;
     }
@@ -129,11 +133,11 @@ class ImageSOA_8bit final : public ImageSOA {
 
     void maxLevel(uint newMax) override;
     [[nodiscard]] std::unique_ptr<ImageSOA_16bit> maxLevelChangeChannelSize(uint newMax);
-    [[nodiscard]] uint8_t getInterpolatedPixel(double x_var, std::vector<uint8_t> const & channel,
-                                               double y_var) const;
     void resizeChannel(std::vector<uint8_t> const & src, std::vector<uint8_t> & dst,
                        Dimensions dim) const;
+    static int calculatePosition(Point point, Dimensions dim) ;
     void resize(Dimensions dim);
+    std::vector<uint8_t> resize_helper(std::vector<uint8_t> & channel, Dimensions dim);
     void reduceColors(size_t n);
 
   private:
