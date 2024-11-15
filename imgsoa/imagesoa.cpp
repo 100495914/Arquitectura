@@ -46,13 +46,13 @@ bool ImageSOA_8bit::operator==(ImageSOA_8bit const & other) const {
       this->blue.size() != other.blue.size()) {
     return false;
   }
-  constexpr int max_pixel_offset = 5;
+  constexpr int max_pixel_offset = 3;
   // Check if the pixel data in each channel is similar within a difference of 5
   for (size_t i = 0; i < this->red.size(); ++i) {
     if (std::abs(this->red[i] - other.red[i]) >= max_pixel_offset ||
         std::abs(this->green[i] - other.green[i]) >= max_pixel_offset ||
         std::abs(this->blue[i] - other.blue[i]) >= max_pixel_offset) {
-      std::cout << "Byte difference exceeds 5 at index: " << i << '\n';
+      std::cout << "Byte difference exceeds 3 at index: " << i << '\n';
       return false;
     }
   }
@@ -67,22 +67,25 @@ bool ImageSOA_16bit::operator==(ImageSOA_16bit const & other) const {
       this->gMaxColorValue() != other.gMaxColorValue() ||
       this->gMagicNumber() != other.gMagicNumber()) {
     return false;
-  }
+      }
 
   // Check if the color channels are the same size
   if (this->red.size() != other.red.size() || this->green.size() != other.green.size() ||
       this->blue.size() != other.blue.size()) {
     return false;
+      }
+  constexpr int max_pixel_offset = 3;
+  // Check if the pixel data in each channel is similar within a difference of 5
+  for (size_t i = 0; i < this->red.size(); ++i) {
+    if (std::abs(this->red[i] - other.red[i]) >= max_pixel_offset ||
+        std::abs(this->green[i] - other.green[i]) >= max_pixel_offset ||
+        std::abs(this->blue[i] - other.blue[i]) >= max_pixel_offset) {
+      std::cout << "Byte difference exceeds 5 at index: " << i << '\n';
+      return false;
+        }
   }
 
-  // Check if the pixel data in each channel is the same
-  for (size_t i = 0; i < this->red.size(); ++i) {
-    if (this->red[i] != other.red[i] || this->green[i] != other.green[i] ||
-        this->blue[i] != other.blue[i]) {
-      return false;
-    }
-  }
-  // If all checks pass, the images are equal
+  // If all checks pass, the images are considered equal
   return true;
 }
 

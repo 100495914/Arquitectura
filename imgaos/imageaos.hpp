@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <tuple>
 
 // Definición de la estructura Pixel
 struct Pixel {
@@ -62,6 +61,8 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
 int colorDistance(const Pixel& pixel1, const Pixel& pixel2);
 
 // Función interpolate
-Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, float weight);
+Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, double weight);
+
+double interpolateChannel(double channel1, double channel2, double weight);
 
 #endif

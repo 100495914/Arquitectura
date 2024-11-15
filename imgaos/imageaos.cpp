@@ -16,49 +16,51 @@ void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax) {
   }
 }
 
+// Función para interpolar un solo canal de color entre dos valores
+double interpolateChannel(double channel1, double channel2, double weight) {
+    return channel1 + (weight * (channel2 - channel1));
+}
 
-// Implementación de la función interpolate
-Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, float weight) {
+// Interpolación de un píxel usando double para mayor precisión
+Pixel interpolate(const Pixel& pixel1, const Pixel& pixel2, double weight) {
     Pixel result = {.red = 0, .green = 0, .blue = 0};
-    result.red = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.red) + (weight * (static_cast<float>(pixel2.red) - static_cast<float>(pixel1.red)))));
-    result.green = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.green) + (weight * (static_cast<float>(pixel2.green) - static_cast<float>(pixel1.green)))));
-    result.blue = static_cast<uint8_t>(std::round(static_cast<float>(pixel1.blue) + (weight * (static_cast<float>(pixel2.blue) - static_cast<float>(pixel1.blue)))));
+    result.red = static_cast<uint16_t>(std::round(interpolateChannel(static_cast<double>(pixel1.red), static_cast<double>(pixel2.red), weight)));
+    result.green = static_cast<uint16_t>(std::round(interpolateChannel(static_cast<double>(pixel1.green), static_cast<double>(pixel2.green), weight)));
+    result.blue = static_cast<uint16_t>(std::round(interpolateChannel(static_cast<double>(pixel1.blue), static_cast<double>(pixel2.blue), weight)));
     return result;
 }
 
-// Implementación de la función para redimensionar la imagen
+// Implementación de la función para redimensionar la imagen con ajustes
+// Implementación de la función para redimensionar la imagen con ajustes
 std::vector<Pixel> resizeImage(const std::vector<Pixel>& originalPixels, const PPMMetadata& originalMetadata, int newWidth, int newHeight) {
-    std::vector<Pixel> resizedPixels(static_cast<std::vector<Pixel>::size_type>(newWidth) * static_cast<std::vector<Pixel>::size_type>(newHeight));
+    std::vector<Pixel> resizedPixels(static_cast<size_t>(newWidth) * static_cast<size_t>(newHeight));
+
+    const double xRatio = static_cast<double>(originalMetadata.width - 1) / static_cast<double>(newWidth - 1);
+    const double yRatio = static_cast<double>(originalMetadata.height - 1) / static_cast<double>(newHeight -1);
+
     for (int yPrime = 0; yPrime < newHeight; ++yPrime) {
         for (int xPrime = 0; xPrime < newWidth; ++xPrime) {
-            const float normalizedX = (static_cast<float>(xPrime) * static_cast<float>(originalMetadata.width-1)) / static_cast<float>(newWidth-1);
-            const float normalizedY = (static_cast<float>(yPrime) * static_cast<float>(originalMetadata.height-1)) / static_cast<float>(newHeight-1);
+            const double normalizedX = xPrime * xRatio;
+            const double normalizedY = yPrime * yRatio;
 
-            const int lowerX = static_cast<int>(std::floor(normalizedX));
-            int upperX = static_cast<int>(std::ceil(normalizedX));
-            const int lowerY = static_cast<int>(std::floor(normalizedY));
-            int upperY = static_cast<int>(std::ceil(normalizedY));
+            auto lowerX = static_cast<size_t>(std::floor(normalizedX));
+            const size_t upperX = std::min(lowerX + 1, static_cast<size_t>(originalMetadata.width - 1));
+            auto lowerY = static_cast<size_t>(std::floor(normalizedY));
+            const size_t upperY = std::min(lowerY + 1, static_cast<size_t>(originalMetadata.height - 1));
 
-            if (upperX >= originalMetadata.width) {
-                upperX = originalMetadata.width - 1;
-            }
-            if (upperY >= originalMetadata.height) {
-                upperY = originalMetadata.height - 1;
-            }
+            const Pixel& pixel1 = originalPixels[(lowerY * static_cast<size_t>(originalMetadata.width)) + lowerX];
+            const Pixel& pixel2 = originalPixels[(lowerY * static_cast<size_t>(originalMetadata.width)) + upperX];
+            const Pixel& pixel3 = originalPixels[(upperY * static_cast<size_t>(originalMetadata.width)) + lowerX];
+            const Pixel& pixel4 = originalPixels[(upperY * static_cast<size_t>(originalMetadata.width)) + upperX];
 
-            const Pixel pixel1 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(lowerY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(lowerX)];
-            const Pixel pixel2 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(lowerY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(upperX)];
-            const Pixel pixel3 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(upperY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(lowerX)];
-            const Pixel pixel4 = originalPixels[(static_cast<std::vector<Pixel>::size_type>(upperY) * static_cast<std::vector<Pixel>::size_type>(originalMetadata.width)) + static_cast<std::vector<Pixel>::size_type>(upperX)];
-
-            const float xWeight = normalizedX - static_cast<float>(lowerX);
-            const float yWeight = normalizedY - static_cast<float>(lowerY);
+            const double xWeight = normalizedX - static_cast<double>(lowerX);
+            const double yWeight = normalizedY - static_cast<double>(lowerY);
 
             const Pixel color1 = interpolate(pixel1, pixel2, xWeight);
             const Pixel color2 = interpolate(pixel3, pixel4, xWeight);
             const Pixel finalColor = interpolate(color1, color2, yWeight);
 
-            resizedPixels[(static_cast<std::vector<Pixel>::size_type>(yPrime) * static_cast<std::vector<Pixel>::size_type>(newWidth)) + static_cast<std::vector<Pixel>::size_type>(xPrime)] = finalColor;
+            resizedPixels[(static_cast<size_t>(yPrime) * static_cast<size_t>(newWidth)) + static_cast<size_t>(xPrime)] = finalColor;
         }
     }
     return resizedPixels;
@@ -201,7 +203,7 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
     Pixel closestColor = colorFreqVec[i].first;
 
     // Encontrar el color más cercano
-    for (auto it = colorFreqVec.begin(); it != colorFreqVec.end(); ++it) {
+    for (auto it = colorFreqVec.begin() + n; it != colorFreqVec.end(); ++it) {
       const int distance = colorDistance(colorToRemove, it->first);
       if (distance < minDistance) {
         minDistance = distance;
