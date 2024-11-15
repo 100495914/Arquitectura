@@ -10,7 +10,8 @@ add_library(common
         misc.cpp
         misc.hpp
         ../utest-common/getPPMMetadata_test.hpp
-        ../utest-imgsoa/utest-imgsoa.cpp
+        ../utest-imgsoa/utest-soa.cpp
+        ../imgsoa/imagesoa.hpp
 )
 # Use this line only if you have dependencies from this library to GSL
 target_link_libraries(common PRIVATE Microsoft.GSL::GSL)

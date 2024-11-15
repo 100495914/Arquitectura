@@ -6,7 +6,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <unordered_map>
-#include <unordered_set>
 
 void scaleIntensity(std::vector<Pixel>& pixels, int currentMax, int newMax) {
   for (auto& pixel : pixels) {
@@ -191,7 +190,7 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
 
   // Convertir a vector y ordenar por frecuencia
   std::vector<std::pair<Pixel, int>> colorFreqVec(colorFrequency.begin(), colorFrequency.end());
-  std::sort(colorFreqVec.begin(), colorFreqVec.end(), [](const auto& aaa, const auto& bbb) {
+  std::ranges::sort(colorFreqVec, [](const auto& aaa, const auto& bbb) {
     return aaa.second < bbb.second;
   });
 
@@ -215,7 +214,7 @@ std::vector<Pixel> removeLeastFrequentColors(const std::vector<Pixel>& pixels, i
   // Aplicar reemplazos
   std::vector<Pixel> modifiedPixels = pixels;
   for (auto& pixel : modifiedPixels) {
-    if (colorReplacement.find(pixel) != colorReplacement.end()) {
+    if (colorReplacement.contains(pixel)) {
       pixel = colorReplacement[pixel];
     }
   }

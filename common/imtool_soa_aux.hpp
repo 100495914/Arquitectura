@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+
 struct Command {
     std::string input;
     std::string output;

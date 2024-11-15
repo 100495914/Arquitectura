@@ -1,7 +1,8 @@
 //
 // Created by diego on 20/10/24.
 //
-#include "imgsoa/imagesoa.hpp"
+
+#include "../imgsoa/imagesoa.hpp"
 
 #include <chrono>
 #include <filesystem>
@@ -32,7 +33,7 @@ namespace {
     auto const image2           = std::make_unique<ImageSOA_8bit>(metadata1);
     image1->loadData(input1);
     image2->loadData(input1);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test comparator failed!"
                 << " \n";
     } else {
@@ -52,7 +53,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->reduceColors(nColors);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test cutFreq lake-large-100k failed!"
                 << " \n";
     } else {
@@ -72,7 +73,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->reduceColors(nColors);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test cutFreq lake-large-162k failed!" << '\n';
     } else {
       std::cout << "Test cutFreq lake-large-162k passed!" << '\n';
@@ -92,7 +93,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize deer-large-100 failed!" << '\n';
     } else {
       std::cout << "Test resize deer-large-100 passed!" << '\n';
@@ -112,7 +113,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize deer-large-1000 failed!" << '\n';
     } else {
       std::cout << "Test resize deer-large-1000 passed!" << '\n';
@@ -132,7 +133,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize deer-small-100 failed!" << '\n';
     } else {
       std::cout << "Test resize deer-small-100 passed!" << '\n';
@@ -152,7 +153,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize deer-small-1000 failed!" << '\n';
     } else {
       std::cout << "Test resize deer-small-1000 passed!" << '\n';
@@ -172,7 +173,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize lake-large-100 failed!" << '\n';
     } else {
       std::cout << "Test resize lake-large-100 passed!" << '\n';
@@ -192,7 +193,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize lake-large-1000 failed!" << '\n';
     } else {
       std::cout << "Test resize lake-large-1000 passed!" << '\n';
@@ -212,7 +213,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize lake-small-100 failed!" << '\n';
     } else {
       std::cout << "Test resize lake-small-100 passed!" << '\n';
@@ -232,7 +233,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->resize(dim);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test resize lake-small-1000 failed!" << '\n';
     } else {
       std::cout << "Test resize lake-small-1000 passed!" << '\n';
@@ -250,7 +251,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->maxLevel(newMaxColor);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test maxlevel deer-small-100 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel deer-small-100 passed!" << '\n';
@@ -268,7 +269,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->maxLevel(newMaxColor);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test maxlevel deer-small-255 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel deer-small-255 passed!" << '\n';
@@ -286,7 +287,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
-    if (*image3 != *image2) {
+    if (!(*image3 == *image2)) {
       std::cerr << "Test maxlevel deer-small-1000 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel deer-small-1000 passed!" << '\n';
@@ -304,7 +305,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
-    if (*image3 != *image2) {
+    if (!(*image3 == *image2)) {
       std::cerr << "Test maxlevel lake-small-65535 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel lake-small-65535 passed!" << '\n';
@@ -322,7 +323,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     image1->maxLevel(newMaxColor);
-    if (*image1 != *image2) {
+    if (!(*image1 == *image2)) {
       std::cerr << "Test maxlevel lake-small-255 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel lake-small-255 passed!" << '\n';
@@ -340,7 +341,7 @@ namespace {
     image1->loadData(input1);
     image2->loadData(input2);
     std::unique_ptr<ImageSOA_16bit> const image3 = image1->maxLevelChangeChannelSize(newMaxColor);
-    if (*image3 != *image2) {
+    if (!(*image3 == *image2)) {
       std::cerr << "Test maxlevel lake-small-65535 failed!" << '\n';
     } else {
       std::cout << "Test maxlevel lake-small-65535 passed!" << '\n';

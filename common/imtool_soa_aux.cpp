@@ -3,8 +3,7 @@
 //
 
 #include "imtool_soa_aux.hpp"
-
-#include "imgsoa/imagesoa.cpp"
+#include "imgsoa/imagesoa.hpp"
 
 #include <iostream>
 #include <optional>
@@ -255,37 +254,44 @@ void handleInfo(Command const & cmd) {
   std::cout << "Image width: " << width << '\n';
 }
 
-int operate(std::vector<std::string> const & arguments, std::optional<Command> const & cmd) {
+int operate(std::vector<std::string> const& arguments, std::optional<Command> const& cmd) {
+  // Check if cmd has a value
+  if (!cmd.has_value()) {
+    std::cerr << "Error: Command is not provided.\n";
+    return -1;
+  }
+
+  // Safe access to cmd
   switch (cmd->operation) {
     case 0:
-      {
-        // Info
-        handleInfo(cmd.value());
-      }
-      break;
+    {
+      // Info
+      handleInfo(*cmd);
+    }
+    break;
     case 1:
-      {
-        // Maxlevel
-        handleMaxLevel(cmd.value());
-      }
-      break;
+    {
+      // Maxlevel
+      handleMaxLevel(*cmd);
+    }
+    break;
     case 2:
-      {
-        // Resize
-        handleResize(cmd.value());
-      }
-      break;
+    {
+      // Resize
+      handleResize(*cmd);
+    }
+    break;
     case 3:
-      {
-        // cutfreq
-        handleCutfreq(cmd.value());
-      }
-      break;
+    {
+      // Cutfreq
+      handleCutfreq(*cmd);
+    }
+    break;
     default:
-      {
-        std::cerr << "Error: Invalid option :" << arguments[3] << '\n';
-        return -1;
-      }
+    {
+      std::cerr << "Error: Invalid option: " << arguments[3] << '\n';
+      return -1;
+    }
   }
   return 0;
 }

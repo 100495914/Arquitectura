@@ -1,5 +1,7 @@
 #include "common/imtool_soa_aux.hpp"
 #include "common/progargs.hpp"
+#include "imgsoa/imagesoa.hpp"
+
 
 #include <iostream>
 #include <optional>

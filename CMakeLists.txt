@@ -34,7 +34,7 @@ FetchContent_Declare(GSL
 FetchContent_MakeAvailable(GSL)
 
 # Enable clang-tidy
-set(CMAKE_CXX_CLANG_TIDY clang-tidy-19;
+set(CMAKE_CXX_CLANG_TIDY clang-tidy-20;
         -format-style=file;
         -header-filter=.;)
 
@@ -50,7 +50,7 @@ add_subdirectory(common)
 # Add unit tests
 if (IMG_BUILD_TESTS)
     enable_testing()
-    add_subdirectory(utest-img)
+    add_subdirectory(utest-imgsoa)
     add_subdirectory(utest-common)
 endif ()
 
